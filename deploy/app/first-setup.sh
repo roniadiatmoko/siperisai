@@ -32,24 +32,17 @@ sudo -u "$SITE_USER" "php${SITE_PHP_VERSION}" init --env=Production --overwrite=
 
 # --- Database setup ---
 if [[ -n "${DB_NAME:-}" ]]; then
-    log_step "Setup database PostgreSQL: $DB_NAME"
+    log_step "Setup database MySQL/MariaDB: $DB_NAME"
 
     # Buat user & DB jika belum ada
     DB_PASS_ACTUAL="${DB_PASS:-$(gen_password 24)}"
 
-    sudo -u postgres psql <<PSQL 2>/dev/null || log_warn "DB mungkin sudah ada, lanjut..."
-DO \$\$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
-        CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASS_ACTUAL}';
-    END IF;
-END
-\$\$;
-CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};
-GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
-\c ${DB_NAME}
-GRANT ALL ON SCHEMA public TO ${DB_USER};
-PSQL
+    mysql -u root <<MYSQL 2>/dev/null || log_warn "DB mungkin sudah ada, lanjut..."
+CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS_ACTUAL}';
+GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
+FLUSH PRIVILEGES;
+MYSQL
 
     # Write common/config/main-local.php
     log_step "Menulis database credentials ke common/config/main-local.php..."
@@ -60,7 +53,7 @@ return [
     'components' => [
         'db' => [
             'class' => \yii\db\Connection::class,
-            'dsn' => 'pgsql:host=127.0.0.1;port=5432;dbname=${DB_NAME}',
+            'dsn' => 'mysql:host=127.0.0.1;port=3306;dbname=${DB_NAME}',
             'username' => '${DB_USER}',
             'password' => '${DB_PASS_ACTUAL}',
             'charset' => 'utf8',

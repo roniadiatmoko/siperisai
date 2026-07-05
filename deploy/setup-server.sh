@@ -60,10 +60,11 @@ NGINX_STATUS="missing"; NGINX_DETAIL="belum terinstall"
 [[ -x /usr/sbin/nginx || -x /usr/bin/nginx ]] \
     && NGINX_STATUS="found" && NGINX_DETAIL="binary ditemukan"
 
-# PostgreSQL
-PG_STATUS="missing"; PG_DETAIL="belum terinstall"
-[[ -x /usr/bin/psql ]] \
-    && PG_STATUS="found" && PG_DETAIL="psql ditemukan"
+# MySQL/MariaDB
+MYSQL_STATUS="missing"; MYSQL_DETAIL="belum terinstall"
+if [[ -x /usr/bin/mysql || -x /usr/sbin/mysqld || -x /usr/bin/mariadb ]]; then
+    MYSQL_STATUS="found"; MYSQL_DETAIL="mysql/mariadb ditemukan"
+fi
 
 # Redis
 REDIS_STATUS="missing"; REDIS_DETAIL="belum terinstall"
@@ -77,7 +78,7 @@ echo -e "  │  $([[ $SYS_STATUS    == found ]] && echo "${GREEN}✓${NC}" || ec
 echo -e "  │  $([[ $PHP_STATUS    == found ]] && echo "${GREEN}✓${NC}" || echo "${YELLOW}○${NC}") PHP              : $PHP_DETAIL"
 echo -e "  │  $([[ $COMPOSER_STATUS == found ]] && echo "${GREEN}✓${NC}" || echo "${YELLOW}○${NC}") Composer         : $COMPOSER_DETAIL"
 echo -e "  │  $([[ $NGINX_STATUS  == found ]] && echo "${GREEN}✓${NC}" || echo "${YELLOW}○${NC}") Nginx            : $NGINX_DETAIL"
-echo -e "  │  $([[ $PG_STATUS     == found ]] && echo "${GREEN}✓${NC}" || echo "${YELLOW}○${NC}") PostgreSQL       : $PG_DETAIL"
+echo -e "  │  $([[ $MYSQL_STATUS  == found ]] && echo "${GREEN}✓${NC}" || echo "${YELLOW}○${NC}") MySQL/MariaDB    : $MYSQL_DETAIL"
 echo -e "  │  $([[ $REDIS_STATUS  == found ]] && echo "${GREEN}✓${NC}" || echo "${YELLOW}○${NC}") Redis            : $REDIS_DETAIL"
 echo "  └────────────────────────────────────────────────────┘"
 echo ""
@@ -111,8 +112,8 @@ if ask_step "Nginx" "$NGINX_STATUS" "$NGINX_DETAIL"; then
     bash "$SCRIPT_DIR/install/nginx.sh"
 fi
 
-if ask_step "PostgreSQL" "$PG_STATUS" "$PG_DETAIL"; then
-    bash "$SCRIPT_DIR/install/postgresql.sh"
+if ask_step "MySQL/MariaDB" "$MYSQL_STATUS" "$MYSQL_DETAIL"; then
+    bash "$SCRIPT_DIR/install/mysql.sh"
 fi
 
 if ask_step "Redis" "$REDIS_STATUS" "$REDIS_DETAIL"; then
@@ -137,16 +138,14 @@ if [[ -f "$VHOST_FILE" ]]; then
     fi
 fi
 
-# Database — pg_isready sangat cepat, tidak perlu query
+# Database — cek mysql show databases
 DB_STATUS="missing"; DB_DETAIL="belum ada"
-if [[ -x /usr/bin/pg_isready ]] || command -v pg_isready &>/dev/null; then
-    if timeout 3 pg_isready -U postgres -d siperisai -q 2>/dev/null; then
+if command -v mysql &>/dev/null; then
+    if mysql -u root -e "use siperisai" &>/dev/null; then
         DB_STATUS="found"; DB_DETAIL="siperisai aktif"
-    elif timeout 3 pg_isready -U postgres -q 2>/dev/null; then
-        DB_DETAIL="PostgreSQL aktif, database siperisai belum ada/belum terkonfigurasi"
+    else
+        DB_DETAIL="mysql aktif, database siperisai belum ada/belum terkonfigurasi"
     fi
-elif [[ -S /var/run/postgresql/.s.PGSQL.5432 ]]; then
-    DB_DETAIL="PostgreSQL berjalan (pg_isready tidak tersedia)"
 fi
 
 # Vendor
@@ -191,24 +190,19 @@ if ask_step "Nginx vhost ($DOMAIN)" "$VHOST_STATUS" "$VHOST_DETAIL"; then
 fi
 
 # Database
-if ask_step "Database PostgreSQL (siperisai)" "$DB_STATUS" "$DB_DETAIL"; then
+if ask_step "Database MySQL (siperisai)" "$DB_STATUS" "$DB_DETAIL"; then
     if [[ -f "$SQL_BACKUP" ]]; then
         log_info "File backup ditemukan: $SQL_BACKUP"
         bash "$SCRIPT_DIR/backup/import-backup.sh" "$SQL_BACKUP" "siperisai" "siperisai"
     else
         log_warn "File $SQL_BACKUP tidak ditemukan — buat database kosong"
         DB_PASS=$(gen_password 24)
-        sudo -u postgres psql <<PSQL 2>/dev/null || true
-DO \$$ BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='siperisai') THEN
-        CREATE USER siperisai WITH PASSWORD '${DB_PASS}';
-    END IF;
-END \$\$;
-CREATE DATABASE siperisai OWNER siperisai;
-GRANT ALL PRIVILEGES ON DATABASE siperisai TO siperisai;
-\c siperisai
-GRANT ALL ON SCHEMA public TO siperisai;
-PSQL
+        mysql -u root <<MYSQL 2>/dev/null || true
+CREATE DATABASE IF NOT EXISTS siperisai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'siperisai'@'localhost' IDENTIFIED BY '${DB_PASS}';
+GRANT ALL PRIVILEGES ON siperisai.* TO 'siperisai'@'localhost';
+FLUSH PRIVILEGES;
+MYSQL
 
         cat > "$APP_DIR/common/config/main-local.php" <<PHP
 <?php
@@ -217,7 +211,7 @@ return [
     'components' => [
         'db' => [
             'class' => \yii\db\Connection::class,
-            'dsn' => 'pgsql:host=127.0.0.1;port=5432;dbname=siperisai',
+            'dsn' => 'mysql:host=127.0.0.1;port=3306;dbname=siperisai',
             'username' => 'siperisai',
             'password' => '${DB_PASS}',
             'charset' => 'utf8',
@@ -316,7 +310,7 @@ fi
 
 echo ""
 echo "  Services:"
-for svc in nginx "php${PHP_ACTIVE}-fpm" postgresql redis-server; do
+for svc in nginx "php${PHP_ACTIVE}-fpm" mariadb redis-server; do
     if systemctl is-active --quiet "$svc" 2>/dev/null; then
         echo -e "  ${GREEN}✓${NC} $svc"
     else
