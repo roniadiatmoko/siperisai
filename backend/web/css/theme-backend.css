@@ -1,0 +1,176 @@
+:root {
+    --k3-green-900: #174d35;
+    --k3-green-800: #1f6a46;
+    --k3-green-700: #2d7f58;
+    --k3-green-600: #3a9569;
+    --k3-green-100: #e8f4ee;
+    --k3-border: #d2e5da;
+    --k3-text: #1f2e27;
+    --k3-muted: #5e7066;
+    --k3-surface: #ffffff;
+    --k3-shadow: 0 10px 24px rgba(23, 77, 53, 0.12);
+}
+
+html,
+body {
+    font-family: "Plus Jakarta Sans", "Nunito Sans", "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--k3-text);
+    background: linear-gradient(180deg, #eef7f1 0%, #f8fcf9 35%, #ffffff 100%);
+}
+
+.app-wrapper {
+    background: transparent;
+}
+
+.app-header.navbar {
+    background: linear-gradient(120deg, var(--k3-green-900), var(--k3-green-700)) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 6px 16px rgba(23, 77, 53, 0.22);
+    min-height: 58px;
+}
+
+.app-header .nav-link,
+.app-header .btn-link.nav-link {
+    color: rgba(255, 255, 255, 0.94) !important;
+    font-weight: 600;
+}
+
+.app-header .nav-link:hover,
+.app-header .btn-link.nav-link:hover {
+    color: #fff !important;
+}
+
+.app-sidebar {
+    background: linear-gradient(180deg, #1f6a46 0%, #174d35 100%) !important;
+    color: #eaf8f0;
+    box-shadow: var(--k3-shadow);
+}
+
+.sidebar-brand .brand-link {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.brand-link .brand-text {
+    color: #fff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+}
+
+.app-sidebar .user-panel {
+    border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.app-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 10px;
+    margin: 2px 8px;
+    padding: 0.6rem 0.75rem;
+}
+
+.app-sidebar .nav-sidebar .nav-item > .nav-link.active,
+.app-sidebar .sidebar-menu .nav-item > .nav-link.active {
+    background: linear-gradient(120deg, #3a9569, #2d7f58) !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(24, 93, 61, 0.28);
+}
+
+.app-sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.app-content-header {
+    padding-top: 1rem;
+    padding-bottom: 0.4rem;
+}
+
+.app-content-header h3 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #224936;
+}
+
+.app-main > .app-content {
+    padding: 0.25rem 0.9rem 1rem;
+}
+
+.card {
+    border: 1px solid var(--k3-border);
+    border-radius: 14px;
+    box-shadow: var(--k3-shadow);
+}
+
+.card-header {
+    background: #f4fbf7;
+    border-bottom: 1px solid var(--k3-border);
+    font-weight: 700;
+}
+
+.table th {
+    background: #f1f9f4;
+    color: #2d4c3d;
+}
+
+.form-control,
+.form-select {
+    border-radius: 10px;
+    border: 1px solid #cddfd4;
+    min-height: 42px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--k3-green-700);
+    box-shadow: 0 0 0 0.2rem rgba(58, 149, 105, 0.18);
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: linear-gradient(120deg, var(--k3-green-800), var(--k3-green-600));
+    border-color: var(--k3-green-800);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(120deg, #1b5c3d, #2b7d57);
+    border-color: #1b5c3d;
+}
+
+.breadcrumb {
+    background: #edf7f1;
+    border: 1px solid var(--k3-border);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.88rem;
+}
+
+.app-footer {
+    background: #eff8f3;
+    border-top: 1px solid var(--k3-border);
+    color: var(--k3-muted);
+    font-size: 0.92rem;
+}
+
+.login-page {
+    background: linear-gradient(180deg, #eaf5ee 0%, #f8fcf9 100%);
+}
+
+@media (max-width: 767px) {
+    html,
+    body {
+        font-size: 14px;
+    }
+
+    .app-main > .app-content {
+        padding: 0.15rem 0.55rem 0.8rem;
+    }
+
+    .app-content-header h3 {
+        font-size: 1.2rem;
+    }
+}

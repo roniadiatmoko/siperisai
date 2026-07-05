@@ -1,0 +1,188 @@
+<?php
+
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
+
+/** @var yii\web\View $this */
+/** @var frontend\models\ReportSubmitForm $model */
+/** @var common\models\Location|null $selectedLocation */
+/** @var array $locationItems */
+/** @var bool $isGuest */
+
+$this->title = 'Buat Laporan';
+
+$this->registerCssFile('/vendor/select2/css/select2.min.css');
+$this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+?>
+
+<div class="report-create">
+    <h1><?= Html::encode($this->title) ?></h1>
+
+    <section class="report-wizard-guide" aria-label="Panduan pengisian laporan">
+        <h2 class="h6 mb-3">Panduan Pengisian</h2>
+        <div class="report-wizard-steps">
+            <div class="report-wizard-step">
+                <span class="report-wizard-step__number">1</span>
+                <span class="report-wizard-step__title">Isi Informasi Kejadian</span>
+                <span class="report-wizard-step__text">Lengkapi data &amp; detail kejadian</span>
+            </div>
+            <div class="report-wizard-step">
+                <span class="report-wizard-step__number">2</span>
+                <span class="report-wizard-step__title">Upload Foto</span>
+                <span class="report-wizard-step__text">Lampirkan foto dokumentasi</span>
+            </div>
+            <div class="report-wizard-step">
+                <span class="report-wizard-step__number">3</span>
+                <span class="report-wizard-step__title">Kirim Laporan</span>
+                <span class="report-wizard-step__text">Submit laporan ke sistem K3L</span>
+            </div>
+        </div>
+    </section>
+
+    <?php if ($selectedLocation !== null): ?>
+        <p class="text-muted">Lokasi terdeteksi dari QR: <strong><?= Html::encode($selectedLocation->name) ?></strong>. Anda tetap bisa mengganti lokasi secara manual.</p>
+    <?php else: ?>
+        <p class="text-muted">Silakan pilih lokasi kerja</p>
+    <?php endif; ?>
+
+    <?php $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]); ?>
+
+    <?= $form->field($model, 'location_id')->dropDownList($locationItems, ['prompt' => 'Pilih lokasi kerja']) ?>
+    <?= $form->field($model, 'incident_time_input')->input('datetime-local') ?>
+    <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
+
+    <?= $form->field($model, 'has_victim')->radioList([1 => 'Ya', 0 => 'Tidak'], ['itemOptions' => ['class' => 'form-check-inline']]) ?>
+
+    <div id="victim-fields">
+        <?= $form->field($model, 'victim_name')->textInput(['maxlength' => true]) ?>
+        <?= $form->field($model, 'victim_condition')->dropDownList($model::victimConditionOptions(), ['prompt' => 'Pilih kondisi korban']) ?>
+        <div id="victim-condition-detail-field">
+            <?= $form->field($model, 'victim_condition_detail')->textarea(['rows' => 2]) ?>
+        </div>
+    </div>
+
+    <?= $form->field($model, 'has_property_damage')->radioList([1 => 'Ya', 0 => 'Tidak'], ['itemOptions' => ['class' => 'form-check-inline']]) ?>
+
+    <div id="property-damage-field">
+        <?= $form->field($model, 'property_damage_detail')->textarea(['rows' => 2]) ?>
+    </div>
+
+    <?= $form->field($model, 'witness')->textarea(['rows' => 2]) ?>
+    <?= $form->field($model, 'additional_notes')->textarea(['rows' => 3]) ?>
+
+
+    <div id="reporter-name-field">
+        <?= $form->field($model, 'reporter_name')->textInput(['maxlength' => true]) ?>
+    </div>
+
+    <?= $form->field($model, 'is_anonymous')->checkbox([
+        'checked' => false,
+    ]) ?>
+
+
+    <?= $form->field($model, 'attachmentFiles')->fileInput(['multiple' => true, 'accept' => 'image/*', 'capture' => 'environment']) ?>
+
+    <div class="form-group mt-3">
+        <?= Html::submitButton('Kirim Laporan', ['class' => 'btn btn-primary']) ?>
+    </div>
+
+    <?php ActiveForm::end(); ?>
+</div>
+
+<?php
+$js = <<<'JS'
+(function () {
+    var $locationSelect = $('#reportsubmitform-location_id');
+    if ($locationSelect.length === 0 || typeof $locationSelect.select2 !== 'function') {
+        return;
+    }
+
+    $locationSelect.select2({
+        width: '100%',
+        placeholder: 'Pilih lokasi kerja',
+        allowClear: true,
+        language: {
+            noResults: function () {
+                return 'Lokasi tidak ditemukan';
+            }
+        }
+    });
+
+    var $hasVictimRadios = $('input[name="ReportSubmitForm[has_victim]"]');
+    var $victimFields = $('#victim-fields');
+    var $victimCondition = $('#reportsubmitform-victim_condition');
+    var $victimConditionDetailField = $('#victim-condition-detail-field');
+    var $victimName = $('#reportsubmitform-victim_name');
+    var $victimConditionDetail = $('#reportsubmitform-victim_condition_detail');
+
+    var $hasDamageRadios = $('input[name="ReportSubmitForm[has_property_damage]"]');
+    var $damageField = $('#property-damage-field');
+    var $damageDetail = $('#reportsubmitform-property_damage_detail');
+
+    var $anonymous = $('#reportsubmitform-is_anonymous');
+    var $reporterNameField = $('#reporter-name-field');
+    var $reporterName = $('#reportsubmitform-reporter_name');
+
+    function toggleVictimConditionDetail() {
+        var hasVictim = $hasVictimRadios.filter(':checked').val() === '1';
+        var isInjured = $victimCondition.val() === 'injured_or_sick';
+        var showDetail = hasVictim && isInjured;
+
+        $victimConditionDetailField.toggle(showDetail);
+        if (!showDetail) {
+            $victimConditionDetail.val('');
+        }
+    }
+
+    function toggleVictimFields() {
+        var show = $hasVictimRadios.filter(':checked').val() === '1';
+        $victimFields.toggle(show);
+
+        if (!show) {
+            $victimName.val('');
+            $victimCondition.val('');
+            $victimConditionDetail.val('');
+        }
+
+        toggleVictimConditionDetail();
+    }
+
+    function toggleDamageField() {
+        var show = $hasDamageRadios.filter(':checked').val() === '1';
+        $damageField.toggle(show);
+        if (!show) {
+            $damageDetail.val('');
+        }
+    }
+
+    function toggleReporterField() {
+        if ($anonymous.length === 0 || $reporterNameField.length === 0) {
+            return;
+        }
+
+        var isAnonymous = $anonymous.is(':checked');
+
+        if (isAnonymous) {
+            $reporterName.val('ANONIM');
+            $reporterNameField.hide();
+        } else {
+            $reporterName.val('');
+            $reporterNameField.show();
+        }
+    }
+
+    $hasVictimRadios.on('change', toggleVictimFields);
+    $victimCondition.on('change', toggleVictimConditionDetail);
+    $hasDamageRadios.on('change', toggleDamageField);
+    if ($anonymous.length > 0) {
+        $anonymous.on('change', toggleReporterField);
+    }
+
+    toggleVictimFields();
+    toggleDamageField();
+    toggleReporterField();
+})();
+JS;
+
+$this->registerJs($js);
+?>

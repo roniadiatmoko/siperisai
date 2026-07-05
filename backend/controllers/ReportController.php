@@ -1,0 +1,312 @@
+<?php
+
+namespace backend\controllers;
+
+use backend\models\ReportSearch;
+use common\models\RefIncidentCategory;
+use common\models\RefIncidentType;
+use common\models\Report;
+use common\models\User;
+use Yii;
+use yii\data\ActiveDataProvider;
+use yii\filters\AccessControl;
+use yii\filters\VerbFilter;
+use yii\helpers\ArrayHelper;
+use yii\web\Controller;
+use yii\web\NotFoundHttpException;
+use yii\web\ForbiddenHttpException;
+use yii\web\Response;
+
+class ReportController extends Controller
+{
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'finalize' => ['post'],
+                    'approve' => ['post'],
+                    'send-coordinator' => ['post'],
+                    'follow-up' => ['post', 'get'],
+                ],
+            ],
+        ];
+    }
+
+    public function actionIndex($queue = null)
+    {
+        if ($queue === null) {
+            if (Yii::$app->user->can('reviewReport')) {
+                $queue = 'secretary';
+            } elseif (Yii::$app->user->can('approveReport')) {
+                $queue = 'teamLead';
+            } elseif (Yii::$app->user->can('followUpReport')) {
+                $queue = 'coordinator';
+            } else {
+                $queue = 'all';
+            }
+        }
+
+        $searchModel = new ReportSearch();
+
+        $dataProvider = $searchModel->search(
+            Yii::$app->request->queryParams,
+            $queue
+        );
+
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+            'queue' => $queue,
+        ]);
+    }
+
+    public function actionView($id)
+    {
+        $model = $this->findModel($id);
+        $users = $this->getUserOptions();
+        $categories = RefIncidentCategory::find()
+            ->where(['status' => 1])
+            ->orderBy('name')
+            ->all();
+
+
+        return $this->render('view', [
+            'model' => $model,
+            'users' => $users,
+            'categories' => $categories,
+        ]);
+    }
+
+    public function actionSecretary($id)
+    {
+        if (!Yii::$app->user->can('reviewReport')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses review laporan.');
+        }
+
+        $model = $this->findModel($id);
+        $editableStatuses = [Report::STATUS_NOT_APPROVED, Report::STATUS_SUBMITTED, Report::STATUS_SECRETARY_REVIEW];
+        if (!in_array($model->status, $editableStatuses, true)) {
+            Yii::$app->session->setFlash('warning', 'Laporan sudah difinalisasi sekretaris dan tidak dapat diedit lagi.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        $users = $this->getUserOptions();
+
+        if (Yii::$app->request->isPost) {
+            $model->incident_type = Yii::$app->request->post('incident_type');
+            $model->recommendation = Yii::$app->request->post('recommendation');
+            $model->pic_user_id = (int) Yii::$app->request->post('pic_user_id');
+            $model->missing_data_note = Yii::$app->request->post('missing_data_note');
+
+            if ($model->save(false, ['incident_type', 'recommendation', 'pic_user_id', 'missing_data_note'])) {
+                if (in_array($model->status, [Report::STATUS_SUBMITTED, Report::STATUS_NOT_APPROVED], true)) {
+                    $note = $model->status === Report::STATUS_NOT_APPROVED
+                        ? 'Laporan direview ulang sekretaris setelah tidak disetujui ketua tim'
+                        : 'Laporan direview sekretaris';
+                    $model->transitionTo(Report::STATUS_SECRETARY_REVIEW, Yii::$app->user->id, $note);
+                }
+
+                Yii::$app->session->setFlash('success', 'Data pelengkap laporan berhasil disimpan.');
+                return $this->redirect(['preview', 'id' => $model->id]);
+            }
+        }
+
+        return $this->render('secretary', [
+            'model' => $model,
+            'users' => $users,
+        ]);
+    }
+
+    public function actionPreview($id)
+    {
+        if (!Yii::$app->user->can('reviewReport')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses preview laporan.');
+        }
+
+        $model = $this->findModel($id);
+
+        return $this->render('preview', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionFinalize($id)
+    {
+        if (!Yii::$app->user->can('finalizeReport')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses finalisasi laporan.');
+        }
+
+        $model = $this->findModel($id);
+        $model->secretary_id = Yii::$app->user->id;
+        $model->secretary_finalized_at = time();
+        $model->save(false, ['secretary_id', 'secretary_finalized_at']);
+        $model->transitionTo(Report::STATUS_TEAM_APPROVED, Yii::$app->user->id, 'Laporan difinalisasi sekretaris');
+
+        $message = "Laporan siap approval\nNo: {$model->report_number}\nLokasi: {$model->location->name}";
+        Yii::$app->telegram->notifyRole(User::ROLE_TEAM_LEAD, $message);
+
+        Yii::$app->session->setFlash('success', 'Laporan berhasil difinalisasi dan notifikasi dikirim ke ketua tim.');
+        return $this->redirect(['view', 'id' => $model->id]);
+    }
+
+    public function actionApprove($id)
+    {
+        if (!Yii::$app->user->can('approveReport')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses approve laporan.');
+        }
+
+        $model = $this->findModel($id);
+        if ($model->status !== Report::STATUS_TEAM_APPROVED) {
+            Yii::$app->session->setFlash('warning', 'Laporan tidak dalam tahap persetujuan ketua tim.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        $decision = Yii::$app->request->post('decision');
+        $approvalNote = trim((string) Yii::$app->request->post('approval_note', ''));
+
+        $model->team_lead_id = Yii::$app->user->id;
+        $model->team_lead_approved_at = time();
+        $model->save(false, ['team_lead_id', 'team_lead_approved_at']);
+
+        if ($decision === 'rejected') {
+            $note = $approvalNote !== '' ? $approvalNote : 'Laporan tidak disetujui ketua tim';
+            $model->transitionTo(Report::STATUS_NOT_APPROVED, Yii::$app->user->id, $note);
+            Yii::$app->telegram->notifyRole(User::ROLE_SECRETARY, "Laporan tidak disetujui ketua tim\nNo: {$model->report_number}\nCatatan: {$note}");
+            Yii::$app->session->setFlash('warning', 'Laporan tidak disetujui ketua tim.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        $note = $approvalNote !== '' ? $approvalNote : 'Laporan disetujui ketua tim';
+        $model->transitionTo(Report::STATUS_SECRETARY_FINALIZED, Yii::$app->user->id, $note);
+
+        $message = "Laporan sudah disetujui ketua tim\nNo: {$model->report_number}\nSilakan lanjutkan proses laporan.";
+        Yii::$app->telegram->notifyRole(User::ROLE_SECRETARY, $message);
+
+        Yii::$app->session->setFlash('success', 'Laporan berhasil disetujui ketua tim.');
+        return $this->redirect(['view', 'id' => $model->id]);
+    }
+
+    public function actionPdf($id)
+    {
+        if (!Yii::$app->user->can('generateReportPdf')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses generate PDF.');
+        }
+
+        $model = $this->findModel($id);
+        $filePath = $this->generatePdfFile($model);
+
+        return Yii::$app->response->sendFile($filePath, basename($filePath));
+    }
+
+    public function actionSendCoordinator($id)
+    {
+        if (!Yii::$app->user->can('sendTelegramNotification')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses kirim Telegram.');
+        }
+
+        $model = $this->findModel($id);
+        $filePath = $this->generatePdfFile($model);
+
+        $model->transitionTo(Report::STATUS_COORDINATOR_FOLLOW_UP, Yii::$app->user->id, 'Laporan dikirim ke koordinator via Telegram');
+
+        $caption = 'Laporan K3L: ' . $model->report_number;
+        $sent = Yii::$app->telegram->notifyRoleWithDocument(User::ROLE_COORDINATOR, $filePath, $caption);
+        if ($sent > 0) {
+            Yii::$app->session->setFlash('success', 'Laporan PDF berhasil dikirim ke koordinator kepala via Telegram.');
+        } else {
+            Yii::$app->session->setFlash('warning', 'PDF gagal dikirim. Periksa bot token dan chat id Telegram koordinator.');
+        }
+
+        return $this->redirect(['view', 'id' => $model->id]);
+    }
+
+    public function actionFollowUp($id)
+    {
+        if (!Yii::$app->user->can('followUpReport')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses tindak lanjut.');
+        }
+
+        $model = $this->findModel($id);
+
+        if (Yii::$app->request->isPost) {
+            $model->coordinator_id = Yii::$app->user->id;
+            $model->coordinator_follow_up_note = Yii::$app->request->post('coordinator_follow_up_note');
+            $model->coordinator_follow_up_at = time();
+
+            if ($model->save(false, ['coordinator_id', 'coordinator_follow_up_note', 'coordinator_follow_up_at'])) {
+                $model->transitionTo(Report::STATUS_CLOSED, Yii::$app->user->id, 'Tindak lanjut koordinator disimpan');
+                Yii::$app->session->setFlash('success', 'Tindak lanjut koordinator berhasil disimpan.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+        }
+
+        return $this->render('follow-up', [
+            'model' => $model,
+        ]);
+    }
+
+    protected function findModel($id)
+    {
+        $model = Report::find()->with(['location', 'reporter', 'picUser', 'attachments', 'statusHistories', 'incidentType'])->where(['id' => $id])->one();
+        if ($model !== null) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException('Laporan tidak ditemukan.');
+    }
+
+    protected function getUserOptions()
+    {
+        $users = User::find()->orderBy(['username' => SORT_ASC])->all();
+        $options = [];
+
+        foreach ($users as $user) {
+            $options[$user->id] = $user->username;
+        }
+
+        return $options;
+    }
+
+    protected function generatePdfFile(Report $model)
+    {
+        $pdfDirectory = Yii::getAlias('@frontend/web/uploads/pdf');
+        if (!is_dir($pdfDirectory)) {
+            @mkdir($pdfDirectory, 0775, true);
+        }
+
+        $filePath = $pdfDirectory . DIRECTORY_SEPARATOR . $model->report_number . '.pdf';
+        $html = $this->renderPartial('_pdf', ['model' => $model]);
+        Yii::$app->pdfService->renderHtmlToFile($html, $filePath);
+
+        return $filePath;
+    }
+
+    public function actionIncidentTypeList($id)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        return RefIncidentType::find()
+            ->select([
+                'id',
+                'text' => 'name'
+            ])
+            ->where([
+                'incident_category_id' => $id,
+                'status' => 1
+            ])
+            ->orderBy('name')
+            ->asArray()
+            ->all();
+    }
+}
