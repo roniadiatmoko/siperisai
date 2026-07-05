@@ -1,0 +1,71 @@
+# ============================================================
+# Backup Configuration
+# Copy ke: deploy/backup/backup.conf (jangan commit ke git!)
+# ============================================================
+
+# === APP INFO ===
+BACKUP_APP_NAME="siperisai"            # Nama prefix file backup
+BACKUP_APP_ROOT="/home/wanforge/www/roniadiatmoko/siperisai"
+
+# === DATABASE ===
+BACKUP_DB=true
+BACKUP_DB_TYPE="pgsql"                 # pgsql atau mysql
+BACKUP_DB_HOST="127.0.0.1"
+BACKUP_DB_PORT="5432"
+BACKUP_DB_NAME="siperisai"
+BACKUP_DB_USER="siperisai"
+BACKUP_DB_PASS=""                      # Atau set via env: PGPASSWORD
+
+# === FILES ===
+BACKUP_FILES=true                      # Backup folder uploads/
+BACKUP_FILES_DIRS=(
+    "frontend/web/uploads"
+    "frontend/web/public/uploads"
+)
+# Exclude patterns (relatif dari BACKUP_APP_ROOT)
+BACKUP_FILES_EXCLUDE=(
+    "backend/runtime"
+    "frontend/runtime"
+    "console/runtime"
+    "node_modules"
+    "vendor"
+    ".git"
+)
+
+# === RETENTION ===
+BACKUP_RETAIN_DAYS=30                  # Hapus backup lokal lebih dari N hari
+
+# === BACKENDS (bisa kombinasi: "local s3 sftp") ===
+BACKUP_BACKENDS="local"
+
+# --- Local ---
+BACKUP_LOCAL_DIR="/var/backups/siperisai"
+
+# --- S3 (AWS S3, MinIO, IDCloudHost, Wasabi, dll) ---
+BACKUP_S3_BUCKET="my-backup-bucket"
+BACKUP_S3_PREFIX="backups/siperisai"
+BACKUP_S3_RETAIN_DAYS=90
+AWS_ACCESS_KEY_ID=""
+AWS_SECRET_ACCESS_KEY=""
+AWS_DEFAULT_REGION="ap-southeast-1"
+AWS_ENDPOINT_URL=""                    # Kosong untuk AWS S3, isi untuk custom (misal IDCloudHost/MinIO)
+
+# --- FTP ---
+BACKUP_FTP_HOST=""
+BACKUP_FTP_PORT="21"
+BACKUP_FTP_USER=""
+BACKUP_FTP_PASS=""
+BACKUP_FTP_DIR="/backups/siperisai"
+BACKUP_FTP_SSL=true                    # Gunakan FTPS (implicit SSL)
+
+# --- SFTP (via rsync/lftp) ---
+BACKUP_SFTP_HOST=""
+BACKUP_SFTP_PORT="22"
+BACKUP_SFTP_USER=""
+BACKUP_SFTP_KEY="/root/.ssh/backup_key"  # SSH key (tanpa passphrase)
+BACKUP_SFTP_DIR="/backups/siperisai"
+
+# === NOTIFIKASI (opsional) ===
+BACKUP_NOTIFY_EMAIL=""                 # Kirim email jika backup gagal
+BACKUP_NOTIFY_TELEGRAM_TOKEN=""        # Bot token
+BACKUP_NOTIFY_TELEGRAM_CHAT_ID=""      # Chat ID
