@@ -409,8 +409,7 @@ class ReportController extends Controller
             ->all();
 
         foreach ($locations as $location) {
-            $requiresDetail = (int) $location->jenis_lokasi === Location::JENIS_LOKASI_EKSTERNAL
-                || (string) $location->code === Location::CODE_INTERNAL_LAINNYA;
+            $requiresDetail = true;
 
             $placeholder = (int) $location->jenis_lokasi === Location::JENIS_LOKASI_EKSTERNAL
                 ? 'Isikan detail lokasi (misal di jalan/perusahaan)'
@@ -470,8 +469,7 @@ class ReportController extends Controller
             return false;
         }
 
-        return (int) $location->jenis_lokasi === Location::JENIS_LOKASI_EKSTERNAL
-            || (string) $location->code === Location::CODE_INTERNAL_LAINNYA;
+        return true;
     }
 
     private function getDraft()

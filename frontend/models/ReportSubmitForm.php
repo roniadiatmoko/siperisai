@@ -86,11 +86,7 @@ class ReportSubmitForm extends Model
             return false;
         }
 
-        if ((int) $location->jenis_lokasi === Location::JENIS_LOKASI_EKSTERNAL) {
-            return true;
-        }
-
-        return (string) $location->code === Location::CODE_INTERNAL_LAINNYA;
+        return true;
     }
 
     public function attributeLabels()

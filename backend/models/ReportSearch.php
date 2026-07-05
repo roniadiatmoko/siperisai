@@ -52,10 +52,15 @@ class ReportSearch extends Report
             case 'secretary':
                 $query->andWhere([
                     'status' => [
-                        Report::STATUS_NOT_APPROVED,
                         Report::STATUS_SUBMITTED,
                         Report::STATUS_SECRETARY_REVIEW,
                     ]
+                ]);
+                break;
+
+            case 'rejected':
+                $query->andWhere([
+                    'status' => Report::STATUS_NOT_APPROVED
                 ]);
                 break;
 

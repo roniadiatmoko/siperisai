@@ -9,11 +9,12 @@ use common\models\ReportStatusHistory;
 
 class Report extends ActiveRecord
 {
+    public const STATUS_SUBMITTED = '1'; //secara default laporan dianggap valid
     public const STATUS_NOT_APPROVED = '0';
-    public const STATUS_SUBMITTED = '1';
-    public const STATUS_SECRETARY_REVIEW = 'secretary_review';
+    public const STATUS_SECRETARY_REVIEW = '6'; //JIKA DITOLAK KETUA TIM K3L, STATUSNYA AKAN KEMBALI KE SEKRETARIS UNTUK DITINDAKLANJUTI
+    
     public const STATUS_SECRETARY_FINALIZED = '3';
-    public const STATUS_TEAM_APPROVED = '2';
+    public const STATUS_TEAM_APPROVED = '2'; 
     public const STATUS_COORDINATOR_FOLLOW_UP = '4';
     public const STATUS_CLOSED = '5';
 
@@ -39,6 +40,27 @@ class Report extends ActiveRecord
     public const PIC_UNIT_WORK_ENVIRONMENT = 'bidang_lingkungan_kerja';
     public const PIC_UNIT_HYGIENE = 'bidang_higiene_sanitasi_lingkungan';
     public const PIC_UNIT_HRD_K3 = 'bidang_pengembangan_sdm_k3';
+
+    public static function statusLabelOptions()
+    {
+        return [
+            self::STATUS_NOT_APPROVED => 'Tidak Disetujui Sekretaris',
+            self::STATUS_SUBMITTED => 'Dikirimkan ke Sekretaris',
+            self::STATUS_TEAM_APPROVED => 'Dikirimkan ke Ketua Tim K3L',
+            self::STATUS_SECRETARY_FINALIZED => 'Finalisasi Tindakan Sekretaris',
+            self::STATUS_COORDINATOR_FOLLOW_UP => 'Tindak Lanjut Koordinator Bidang',
+            self::STATUS_SECRETARY_REVIEW => 'Review Ulang',
+            self::STATUS_CLOSED => 'Tindak Lanjut Koordinator Bidang',
+        ];
+    }
+
+    public static function statusLabel($status)
+    {
+        $labels = self::statusLabelOptions();
+        $key = (string) $status;
+
+        return $labels[$key] ?? '-';
+    }
 
     public static function victimConditionOptions()
     {

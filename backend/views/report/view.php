@@ -24,15 +24,7 @@ $this->registerJsFile(
     ['depends' => [\yii\web\JqueryAsset::class]]
 );
 
-$statusLabels = [
-    Report::STATUS_NOT_APPROVED => 'Tidak Disetujui Ketua Tim',
-    Report::STATUS_SUBMITTED => 'Dikirimkan ke Sekretaris',
-    Report::STATUS_TEAM_APPROVED => 'Dikirimkan ke Ketua Tim K3L',
-    Report::STATUS_SECRETARY_FINALIZED => 'Finalisasi Tindakan Sekretaris',
-    Report::STATUS_COORDINATOR_FOLLOW_UP => 'Tindak Lanjut Koordinator Bidang',
-    Report::STATUS_SECRETARY_REVIEW => 'Dikirimkan ke Sekretaris',
-    Report::STATUS_CLOSED => 'Tindak Lanjut Koordinator Bidang',
-];
+$statusLabels = Report::statusLabelOptions();
 
 $victimConditionLabels = Report::victimConditionOptions();
 $selectedIncidentTypeId = $model->incident_type ? (string) $model->incident_type : '';
@@ -171,9 +163,60 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
                     <td><?= nl2br(Html::encode($model->coordinator_follow_up_note ?: '-')) ?></td>
                 </tr>
             </table>
-
+            <br/>
+            <div class="row">
+                <div class="col-lg-6">
+                    <h5 class="mb-3">Lampiran</h5>
+                    <?php $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']; ?>
+                    <div class="row g-3">
+                        <?php foreach ($model->attachments as $attachment): ?>
+                            <?php
+                            $fileUrl = Url::to(['attachment', 'id' => $attachment->id]);
+                            $extension = strtolower(pathinfo((string) $attachment->original_name, PATHINFO_EXTENSION));
+                            $isImage = in_array($extension, $imageExtensions, true);
+                            ?>
+                            <div class="col-md-6">
+                                <div class="border rounded p-2 h-100">
+                                    <?php if ($isImage): ?>
+                                        <div class="mb-2 text-center">
+                                            <img src="<?= Html::encode($fileUrl) ?>"
+                                                alt="<?= Html::encode($attachment->original_name) ?>"
+                                                style="max-width:100%;max-height:180px;object-fit:contain;" />
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="small mb-1"><strong><?= Html::encode($attachment->original_name) ?></strong></div>
+                                    <div>
+                                        <?= Html::a('Lihat Lampiran', $fileUrl, ['target' => '_blank', 'class' => 'btn btn-sm btn-outline-primary']) ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                        <?php if (empty($model->attachments)): ?>
+                            <div class="col-12 text-muted">Tidak ada lampiran</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h5 class="mb-3">Riwayat Status</h5>
+                    <ul class="list-group list-group-flush">
+                        <?php foreach ($model->statusHistories as $history): ?>
+                            <li class="list-group-item px-0">
+                                <?= date('d-m-Y H:i', (int) $history->created_at) ?>
+                                - <?= Html::encode(Report::statusLabel($history->status_from) . ' -> ' . Report::statusLabel($history->status_to)) ?>
+                                <?php if (!empty($history->note)): ?>
+                                    (<?= Html::encode($history->note) ?>)
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (empty($model->statusHistories)): ?>
+                            <li class="list-group-item px-0">Belum ada histori status.</li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+            </div>
+            <hr/>
             <?php if (Yii::$app->user->can('reviewReport') && $isSecretaryEditable): ?>
-                <div class="card card-outline card-success mb-4">
+                <div class="card card-outline card-info mb-4">
                     <div class="card-header">
                         <h3 class="card-title mb-0">Hasil Telaah Laporan</h3>
                     </div>
@@ -286,8 +329,19 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
                             <label class="form-label" for="additional_notes">Catatan pelapor</label>
                             <textarea id="additional_notes" class="form-control" name="additional_notes" rows="3"><?= Html::encode($model->additional_notes) ?></textarea>
                         </div>
-                        <?= Html::submitButton('Preview', ['class' => 'btn btn-primary']) ?>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?= Html::submitButton('Preview', ['class' => 'btn btn-primary']) ?>
+                        </div>
                         <?= Html::endForm() ?>
+
+                        <div class="mt-2">
+                            <?= Html::beginForm(['invalid', 'id' => $model->id], 'post', ['class' => 'd-inline']) ?>
+                            <?= Html::submitButton('Laporan tidak valid', [
+                                'class' => 'btn btn-outline-danger',
+                                'data-confirm' => 'Yakin menandai laporan ini sebagai tidak valid?',
+                            ]) ?>
+                            <?= Html::endForm() ?>
+                        </div>
                     </div>
                 </div>
             <?php endif; ?>
@@ -312,42 +366,7 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
                 </div>
             <?php endif; ?>
 
-            <div class="row">
-                <div class="col-lg-6">
-                    <h5 class="mb-3">Lampiran</h5>
-                    <ul class="list-group list-group-flush">
-                        <?php foreach ($model->attachments as $attachment): ?>
-                            <li class="list-group-item px-0">
-                                <?= Html::a(
-                                    Html::encode($attachment->original_name),
-                                    Yii::$app->params['app.uploadUrl'] . '/' . ltrim($attachment->file_path, '/'),
-                                    ['target' => '_blank']
-                                ) ?>
-                            </li>
-                        <?php endforeach; ?>
-                        <?php if (empty($model->attachments)): ?>
-                            <li class="list-group-item px-0">Tidak ada lampiran</li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-                <div class="col-lg-6">
-                    <h5 class="mb-3">Riwayat Status</h5>
-                    <ul class="list-group list-group-flush">
-                        <?php foreach ($model->statusHistories as $history): ?>
-                            <li class="list-group-item px-0">
-                                <?= date('d-m-Y H:i', (int) $history->created_at) ?>
-                                - <?= Html::encode(($history->status_from ?: '-') . ' -> ' . $history->status_to) ?>
-                                <?php if (!empty($history->note)): ?>
-                                    (<?= Html::encode($history->note) ?>)
-                                <?php endif; ?>
-                            </li>
-                        <?php endforeach; ?>
-                        <?php if (empty($model->statusHistories)): ?>
-                            <li class="list-group-item px-0">Belum ada histori status.</li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>

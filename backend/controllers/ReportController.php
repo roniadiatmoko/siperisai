@@ -6,6 +6,7 @@ use backend\models\ReportSearch;
 use common\models\RefIncidentCategory;
 use common\models\RefIncidentType;
 use common\models\Report;
+use common\models\ReportAttachment;
 use common\models\User;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -34,10 +35,12 @@ class ReportController extends Controller
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
+                    'invalid' => ['post'],
                     'finalize' => ['post'],
                     'approve' => ['post'],
                     'send-coordinator' => ['post'],
                     'follow-up' => ['post', 'get'],
+                    'attachment' => ['get'],
                 ],
             ],
         ];
@@ -100,6 +103,7 @@ class ReportController extends Controller
         }
 
         if (Yii::$app->request->isPost) {
+
             $incidentTypeId = Yii::$app->request->post('incident_type_id', Yii::$app->request->post('incident_type'));
             $causeGroup = Yii::$app->request->post('cause_group');
             $causeSubtype = Yii::$app->request->post('cause_subtype');
@@ -197,6 +201,31 @@ class ReportController extends Controller
         ]);
     }
 
+    public function actionInvalid($id)
+    {
+        if (!Yii::$app->user->can('reviewReport')) {
+            throw new ForbiddenHttpException('Anda tidak memiliki akses review laporan.');
+        }
+
+        $model = $this->findModel($id);
+        $editableStatuses = [Report::STATUS_NOT_APPROVED, Report::STATUS_SUBMITTED, Report::STATUS_SECRETARY_REVIEW];
+        if (!in_array($model->status, $editableStatuses, true)) {
+            Yii::$app->session->setFlash('warning', 'Laporan sudah difinalisasi sekretaris dan tidak dapat diubah.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        if ($model->status !== Report::STATUS_NOT_APPROVED) {
+            $model->transitionTo(
+                Report::STATUS_NOT_APPROVED,
+                Yii::$app->user->id,
+                'Laporan dinyatakan tidak valid oleh sekretaris'
+            );
+        }
+
+        Yii::$app->session->setFlash('warning', 'Laporan ditandai sebagai tidak valid.');
+        return $this->redirect(['index', 'queue' => 'rejected']);
+    }
+
     public function actionPreview($id)
     {
         if (!Yii::$app->user->can('reviewReport')) {
@@ -250,7 +279,7 @@ class ReportController extends Controller
 
         if ($decision === 'rejected') {
             $note = $approvalNote !== '' ? $approvalNote : 'Laporan tidak disetujui ketua tim';
-            $model->transitionTo(Report::STATUS_NOT_APPROVED, Yii::$app->user->id, $note);
+            $model->transitionTo(Report::STATUS_SECRETARY_REVIEW, Yii::$app->user->id, $note);
             Yii::$app->telegram->notifyRole(User::ROLE_SECRETARY, "Laporan tidak disetujui ketua tim\nNo: {$model->report_number}\nCatatan: {$note}");
             Yii::$app->session->setFlash('warning', 'Laporan tidak disetujui ketua tim.');
             return $this->redirect(['view', 'id' => $model->id]);
@@ -276,6 +305,24 @@ class ReportController extends Controller
         $filePath = $this->generatePdfFile($model);
 
         return Yii::$app->response->sendFile($filePath, basename($filePath));
+    }
+
+    public function actionAttachment($id)
+    {
+        $attachment = ReportAttachment::findOne((int) $id);
+        if ($attachment === null) {
+            throw new NotFoundHttpException('Lampiran tidak ditemukan.');
+        }
+
+        $baseDirectory = Yii::getAlias(Yii::$app->params['app.uploadPath']);
+        $relativePath = ltrim((string) $attachment->file_path, '/');
+        $fullPath = rtrim($baseDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+        if (!is_file($fullPath)) {
+            throw new NotFoundHttpException('File lampiran tidak ditemukan di server.');
+        }
+
+        return Yii::$app->response->sendFile($fullPath, (string) $attachment->original_name, ['inline' => true]);
     }
 
     public function actionSendCoordinator($id)

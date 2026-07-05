@@ -15,21 +15,21 @@ $this->params['breadcrumbs'][] = $this->title;
 
 $queueLabels = [
     'secretary' => 'Antrian Sekretaris',
+    'rejected' => 'Antrian Ditolak',
     'tindakan' => 'Antrian Tindakan',
     'teamLead' => 'Antrian Ketua Tim',
     'coordinator' => 'Antrian Koordinator',
     'all' => 'Semua Laporan',
 ];
 
-$statusLabels = [
-    '0' => 'Tidak Disetujui Ketua Tim',
-    Report::STATUS_SUBMITTED => 'Dikirimkan ke Sekretaris',
-    Report::STATUS_TEAM_APPROVED => 'Dikirimkan ke Ketua Tim K3L',
-    Report::STATUS_SECRETARY_FINALIZED => 'Finalisasi Tindakan Sekretaris',
-    Report::STATUS_COORDINATOR_FOLLOW_UP => 'Tindak Lanjut Koordinator Bidang',
-    Report::STATUS_SECRETARY_REVIEW => 'Dikirimkan ke Sekretaris',
-    Report::STATUS_CLOSED => 'Tindak Lanjut Koordinator Bidang',
-];
+$statusLabels = Report::statusLabelOptions();
+$queueButtonClass = static function (string $name, string $baseClass = 'btn-outline-primary') use ($queue): string {
+    if ($queue === $name) {
+        return str_replace('outline-', '', $baseClass);
+    }
+
+    return $baseClass;
+};
 ?>
 
 <div class="report-index">
@@ -39,14 +39,15 @@ $statusLabels = [
 
             <div class="d-flex flex-wrap gap-2 mb-3">
                 <?php if (Yii::$app->user->can('reviewReport')): ?>
-                    <?= Html::a('Antrian Sekretaris', ['index', 'queue' => 'secretary'], ['class' => 'btn btn-outline-primary btn-sm']) ?>
-                    <?= Html::a('Antrian Tindakan', ['index', 'queue' => 'tindakan'], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                    <?= Html::a('Antrian Sekretaris', ['index', 'queue' => 'secretary'], ['class' => 'btn ' . $queueButtonClass('secretary') . ' btn-sm']) ?>
+                    <?= Html::a('Antrian Ditolak', ['index', 'queue' => 'rejected'], ['class' => 'btn ' . $queueButtonClass('rejected', 'btn-outline-danger') . ' btn-sm']) ?>
+                    <?= Html::a('Antrian Tindakan', ['index', 'queue' => 'tindakan'], ['class' => 'btn ' . $queueButtonClass('tindakan') . ' btn-sm']) ?>
                 <?php endif; ?>
                 <?php if (Yii::$app->user->can('approveReport')): ?>
-                    <?= Html::a('Antrian Ketua Tim', ['index', 'queue' => 'teamLead'], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                    <?= Html::a('Antrian Ketua Tim', ['index', 'queue' => 'teamLead'], ['class' => 'btn ' . $queueButtonClass('teamLead') . ' btn-sm']) ?>
                 <?php endif; ?>
                 <?php if (Yii::$app->user->can('followUpReport')): ?>
-                    <?= Html::a('Antrian Koordinator', ['index', 'queue' => 'coordinator'], ['class' => 'btn btn-outline-primary btn-sm']) ?>
+                    <?= Html::a('Antrian Koordinator', ['index', 'queue' => 'coordinator'], ['class' => 'btn ' . $queueButtonClass('coordinator') . ' btn-sm']) ?>
                 <?php endif; ?>
             </div>
 

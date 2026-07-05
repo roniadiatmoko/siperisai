@@ -23,10 +23,10 @@ if (!Yii::$app->user->isGuest) {
         $query->andWhere(['status' => [Report::STATUS_SUBMITTED, Report::STATUS_SECRETARY_REVIEW]]);
         $reportQueueUrl = ['/report/index', 'queue' => 'secretary'];
     } elseif (Yii::$app->user->can('approveReport')) {
-        $query->andWhere(['status' => Report::STATUS_SECRETARY_FINALIZED]);
+        $query->andWhere(['status' => Report::STATUS_TEAM_APPROVED]);
         $reportQueueUrl = ['/report/index', 'queue' => 'teamLead'];
     } elseif (Yii::$app->user->can('followUpReport')) {
-        $query->andWhere(['status' => [Report::STATUS_TEAM_APPROVED, Report::STATUS_COORDINATOR_FOLLOW_UP]]);
+        $query->andWhere(['status' => [Report::STATUS_COORDINATOR_FOLLOW_UP]]);
         $reportQueueUrl = ['/report/index', 'queue' => 'coordinator'];
     }
 
