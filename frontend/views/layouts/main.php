@@ -36,6 +36,7 @@ AppAsset::register($this);
     ]);
     $menuItems = [
         ['label' => 'Beranda', 'url' => ['/site/index']],
+        ['label' => 'Cek Progres', 'url' => ['/report/track']],
     ];
     if (!Yii::$app->user->isGuest && Yii::$app->user->can('submitReport')) {
         $menuItems[] = ['label' => 'Daftar Laporan', 'url' => ['/report/start']];    

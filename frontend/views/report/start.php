@@ -30,6 +30,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     <tr>
                         <th>No Laporan</th>
                         <th>Lokasi</th>
+                        <th>Detail Lokasi</th>
                         <th>Waktu Kejadian</th>
                         <th>Status</th>
                         <th>Dibuat</th>
@@ -42,6 +43,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <tr>
                                 <td><?= Html::encode($report->report_number) ?></td>
                                 <td><?= Html::encode($report->location ? $report->location->name : '-') ?></td>
+                                <td><?= Html::encode($report->detail_lokasi ?: '-') ?></td>
                                 <td><?= date('d-m-Y H:i', (int) $report->incident_time) ?></td>
                                 <td><span class="badge bg-secondary"><?= Html::encode($report->status) ?></span></td>
                                 <td><?= date('d-m-Y H:i', (int) $report->created_at) ?></td>
@@ -52,7 +54,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Belum ada laporan. Klik "Tambah Laporan Baru" untuk membuat laporan pertama Anda.</td>
+                            <td colspan="7" class="text-center text-muted">Belum ada laporan. Klik "Tambah Laporan Baru" untuk membuat laporan pertama Anda.</td>
                         </tr>
                     <?php endif; ?>
                     </tbody>

@@ -22,6 +22,7 @@ $victimConditionLabels = Report::victimConditionOptions();
             <table class="table table-striped align-middle">
                 <tr><th>No Laporan</th><td><?= Html::encode($model->report_number) ?></td></tr>
                 <tr><th>Lokasi</th><td><?= Html::encode($model->location ? $model->location->name : '-') ?></td></tr>
+                <tr><th>Detail Lokasi</th><td><?= nl2br(Html::encode($model->detail_lokasi ?: '-')) ?></td></tr>
                 <tr><th>Pelapor</th><td><?= Html::encode($model->reporter ? $model->reporter->username : ($model->reporter_name ?: '-')) ?></td></tr>
                 <tr><th>Laporan Anonim</th><td><?= $model->is_anonymous ? 'Ya' : 'Tidak' ?></td></tr>
                 <tr><th>Waktu Kejadian</th><td><?= date('d-m-Y H:i', (int) $model->incident_time) ?></td></tr>
@@ -38,9 +39,11 @@ $victimConditionLabels = Report::victimConditionOptions();
 
             <h5 class="mb-3">Hasil Telaah Sekretaris</h5>
             <table class="table table-striped align-middle">
-                <tr><th>Jenis Kejadian</th><td><?= Html::encode($model->incident_type ?: '-') ?></td></tr>
+                <tr><th>Jenis Kejadian</th><td><?= Html::encode($model->incident_type ? $model->incidentType->incidentCategory->name . ' - ' . $model->incidentType->name : '-') ?></td></tr>
+                <tr><th>Penyebab Kejadian</th><td><?= Html::encode($model->getCauseGroupLabel()) ?></td></tr>
+                <tr><th>Jenis Penyebab Kejadian</th><td><?= Html::encode($model->getCauseSubtypeLabel()) ?></td></tr>
                 <tr><th>Rekomendasi</th><td><?= nl2br(Html::encode($model->recommendation ?: '-')) ?></td></tr>
-                <tr><th>PIC</th><td><?= Html::encode($model->picUser ? $model->picUser->username : '-') ?></td></tr>
+                <tr><th>PIC</th><td><?= Html::encode($model->getPicDisplayLabel()) ?></td></tr>
                 <tr><th>Data yang Kurang</th><td><?= nl2br(Html::encode($model->missing_data_note ?: '-')) ?></td></tr>
             </table>
 

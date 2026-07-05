@@ -5,126 +5,258 @@ use yii\helpers\Html;
 
 /** @var common\models\Report $model */
 
-$statusLabels = [
-    Report::STATUS_NOT_APPROVED => 'Tidak Disetujui Ketua Tim',
-    Report::STATUS_SUBMITTED => 'Dikirimkan ke Sekretaris',
-    Report::STATUS_TEAM_APPROVED => 'Dikirimkan ke Ketua Tim K3L',
-    Report::STATUS_SECRETARY_FINALIZED => 'Finalisasi Tindakan Sekretaris',
-    Report::STATUS_COORDINATOR_FOLLOW_UP => 'Tindak Lanjut Koordinator Bidang',
-    Report::STATUS_SECRETARY_REVIEW => 'Dikirimkan ke Sekretaris',
-    Report::STATUS_CLOSED => 'Tindak Lanjut Koordinator Bidang',
-];
+$box = static function ($checked) {
+    return $checked ? '[X]' : '[ ]';
+};
 
-$victimConditionLabels = Report::victimConditionOptions();
-$teamLeadNote = '-';
-$teamLeadDecision = '-';
+$normalize = static function ($value) {
+    $value = strtolower((string) $value);
+    return preg_replace('/\s+/', ' ', trim($value));
+};
 
-for ($index = count($model->statusHistories) - 1; $index >= 0; $index--) {
-    $history = $model->statusHistories[$index];
-    if (in_array($history->status_to, [Report::STATUS_SECRETARY_FINALIZED, Report::STATUS_NOT_APPROVED], true)) {
-        $teamLeadDecision = $statusLabels[$history->status_to] ?? $history->status_to;
-        $teamLeadNote = !empty($history->note) ? $history->note : '-';
-        break;
+$contains = static function ($haystack, array $needles) use ($normalize) {
+    $haystack = $normalize($haystack);
+    foreach ($needles as $needle) {
+        if (str_contains($haystack, $normalize($needle))) {
+            return true;
+        }
+    }
+    return false;
+};
+
+$categoryName = $model->incidentType && $model->incidentType->incidentCategory
+    ? (string) $model->incidentType->incidentCategory->name
+    : '';
+$incidentTypeName = $model->incidentType ? (string) $model->incidentType->name : '';
+
+$isPelaporanBahaya = $contains($categoryName, ['bahaya']);
+$isSakitAkibatKerja = $contains($categoryName, ['sakit akibat kerja', 'penyakit akibat kerja', 'pak', 'medis']);
+$isInsidenK3 = $contains($categoryName, ['insiden', 'k3', 'kecelakaan', 'near miss', 'nearmiss', 'hampir celaka']);
+
+$isKondisiTidakAman = $contains($incidentTypeName, ['kondisi tidak aman']);
+$isPerilakuTidakAman = $contains($incidentTypeName, ['perilaku tidak aman']);
+$isPAK = $contains($incidentTypeName, ['penyakit akibat kerja', 'pak']);
+$isGawatMedis = $contains($incidentTypeName, ['kegawatdaruratan medis', 'gawat darurat', 'medis']);
+$isNearMiss = $contains($incidentTypeName, ['hampir celaka', 'near miss', 'nearmiss']);
+$isKecelakaanKerja = $contains($incidentTypeName, ['kecelakaan kerja']);
+
+$isVictimConscious = (string) $model->victim_condition === Report::VICTIM_CONDITION_CONSCIOUS;
+$isVictimUnconscious = (string) $model->victim_condition === Report::VICTIM_CONDITION_UNCONSCIOUS;
+$isVictimInjured = (string) $model->victim_condition === Report::VICTIM_CONDITION_INJURED;
+$isVictimNotInjured = (string) $model->victim_condition === Report::VICTIM_CONDITION_NOT_INJURED;
+
+$isCauseDirect = (string) $model->cause_group === Report::CAUSE_GROUP_DIRECT;
+$isCauseIndirect = (string) $model->cause_group === Report::CAUSE_GROUP_INDIRECT;
+$isCauseUnsafeCondition = (string) $model->cause_subtype === Report::CAUSE_SUBTYPE_UNSAFE_CONDITION;
+$isCauseUnsafeBehavior = (string) $model->cause_subtype === Report::CAUSE_SUBTYPE_UNSAFE_BEHAVIOR;
+$isCausePersonal = (string) $model->cause_subtype === Report::CAUSE_SUBTYPE_PERSONAL;
+$isCauseWork = (string) $model->cause_subtype === Report::CAUSE_SUBTYPE_WORK;
+
+$isValidVerification = (string) $model->status !== Report::STATUS_NOT_APPROVED;
+
+$uploadBasePath = Yii::getAlias(Yii::$app->params['app.uploadPath']);
+$imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+$imagePaths = [];
+$nonImageFiles = [];
+
+foreach ($model->attachments as $attachment) {
+    $relative = ltrim((string) $attachment->file_path, '/');
+    $fullPath = rtrim($uploadBasePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+    $ext = strtolower(pathinfo((string) $attachment->original_name, PATHINFO_EXTENSION));
+
+    if (in_array($ext, $imageExtensions, true) && is_file($fullPath)) {
+        $imagePaths[] = $fullPath;
+    } else {
+        $nonImageFiles[] = (string) $attachment->original_name;
     }
 }
 
+$detailLokasiText = trim((string) $model->detail_lokasi);
+$lokasiText = trim((string) ($model->location ? $model->location->name : '-'));
+if ($detailLokasiText !== '') {
+    $lokasiText .= ' - ' . $detailLokasiText;
+}
+
+$waktuKejadianTanggal = date('d / m / Y', (int) $model->incident_time);
+$waktuKejadianJam = date('H:i', (int) $model->incident_time);
+
 ?>
 
-<h2 style="margin-bottom: 4px;">Laporan Keselamatan Kerja</h2>
-<p style="margin-top: 0;">No: <?= Html::encode($model->report_number) ?></p>
+<style>
+    body { font-family: serif; font-size: 11px; color: #111; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border: 1px solid #8f8f8f; padding: 6px; vertical-align: top; }
+    .no-border td { border: none; padding: 0; }
+    .title { text-align: center; font-weight: bold; font-size: 33px; line-height: 1.25; margin-bottom: 12px; }
+    .label-cell { width: 30%; font-weight: bold; background: #f4f4f4; }
+    .section-title { margin-top: 12px; margin-bottom: 0; background: #154f61; color: #fff; font-weight: bold; padding: 5px 8px; font-size: 12px; }
+    .hint { font-style: italic; color: #6f6f6f; font-size: 10px; }
+    .line-space { min-height: 38px; }
+    .line-space-lg { min-height: 62px; }
+    .checkbox-line { margin-right: 14px; white-space: nowrap; }
+    .img-box { width: 48%; border: 1px solid #8f8f8f; padding: 4px; margin: 4px 1%; display: inline-block; text-align: center; }
+    .img-box img { max-width: 100%; max-height: 150px; }
+    .signature td { text-align: center; height: 76px; }
+</style>
 
-<h3 style="margin: 18px 0 8px; font-size: 14px;">Data Laporan Pelapor</h3>
-<table width="100%" cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; font-size: 12px;">
+<div class="title">
+    FORMULIR<br>
+    PELAPORAN BAHAYA, KECELAKAAN KERJA DAN PENYAKIT AKIBAT KERJA<br>
+    BALAI KESELAMATAN DAN KESEHATAN KERJA<br>
+    DISNAKERTRANS PROVINSI JAWA TENGAH
+</div>
+
+<table>
     <tr>
-        <td width="35%"><strong>Status</strong></td>
-        <td><?= Html::encode($statusLabels[$model->status] ?? '-') ?></td>
+        <td class="label-cell" style="width:20%;">No. Laporan</td>
+        <td style="width:30%;"><?= Html::encode($model->report_number ?: '(diisi otomatis sistem)') ?></td>
+        <td class="label-cell" style="width:20%;">Tanggal Cetak</td>
+        <td style="width:30%;"><?= date('d-m-Y') ?></td>
+    </tr>
+</table>
+
+<div class="section-title">BAGIAN I &mdash; DIISI OLEH PELAPOR</div>
+<table>
+    <tr>
+        <td class="label-cell">1. Lokasi Kejadian</td>
+        <td><?= Html::encode($lokasiText) ?></td>
     </tr>
     <tr>
-        <td><strong>Lokasi</strong></td>
-        <td><?= Html::encode($model->location ? $model->location->name : '-') ?></td>
+        <td class="label-cell">2. Waktu Kejadian</td>
+        <td>Tanggal: <?= Html::encode($waktuKejadianTanggal) ?> &nbsp;&nbsp;&nbsp; Jam: <?= Html::encode($waktuKejadianJam) ?> WIB</td>
     </tr>
     <tr>
-        <td><strong>Pelapor</strong></td>
-        <td><?= Html::encode($model->reporter ? $model->reporter->username : ($model->reporter_name ?: '-')) ?></td>
+        <td colspan="2">
+            <strong>3. Kronologi Kejadian (jelaskan singkat kejadian yang dilihat/dialami)</strong>
+            <div class="line-space-lg"><?= nl2br(Html::encode($model->description ?: '')) ?></div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Laporan Anonim</strong></td>
-        <td><?= $model->is_anonymous ? 'Ya' : 'Tidak' ?></td>
+        <td class="label-cell">4. Apakah Ada Korban?</td>
+        <td>
+            <span class="checkbox-line"><?= $box((int) $model->has_victim === 1) ?> Ya</span>
+            <span class="checkbox-line"><?= $box((int) $model->has_victim !== 1) ?> Tidak</span>
+            <div class="hint">Catatan sistem: jika "Tidak" dipilih, kolom data korban dapat dikosongkan.</div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Waktu Kejadian</strong></td>
-        <td><?= date('d-m-Y H:i', (int) $model->incident_time) ?></td>
-    </tr>
-    <tr>
-        <td><strong>Deskripsi</strong></td>
-        <td><?= nl2br(Html::encode($model->description)) ?></td>
-    </tr>
-    <tr>
-        <td><strong>Ada Korban</strong></td>
-        <td><?= $model->has_victim ? 'Ya' : 'Tidak' ?></td>
-    </tr>
-    <tr>
-        <td><strong>Nama Korban</strong></td>
+        <td class="label-cell">Nama Korban</td>
         <td><?= Html::encode($model->victim_name ?: '-') ?></td>
     </tr>
     <tr>
-        <td><strong>Kondisi Korban</strong></td>
-        <td><?= Html::encode($victimConditionLabels[$model->victim_condition] ?? '-') ?></td>
+        <td class="label-cell">Kondisi Korban</td>
+        <td>
+            <span class="checkbox-line"><?= $box($isVictimConscious) ?> Sadar</span>
+            <span class="checkbox-line"><?= $box($isVictimUnconscious) ?> Tidak Sadar</span>
+            <span class="checkbox-line"><?= $box($isVictimNotInjured) ?> Tidak Cidera</span>
+            <span class="checkbox-line"><?= $box($isVictimInjured) ?> Cidera / Luka / Sakit</span>
+            <div>Bagian tubuh yang terdampak: <?= Html::encode($model->victim_condition_detail ?: '-') ?></div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Detail Kondisi Korban</strong></td>
-        <td><?= nl2br(Html::encode($model->victim_condition_detail ?: '-')) ?></td>
+        <td class="label-cell">5. Kerusakan Sarana/Prasarana?</td>
+        <td>
+            <span class="checkbox-line"><?= $box((int) $model->has_property_damage === 1) ?> Ya</span>
+            <span class="checkbox-line"><?= $box((int) $model->has_property_damage !== 1) ?> Tidak</span>
+            <div>Sebutkan: <?= Html::encode($model->property_damage_detail ?: '-') ?></div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Ada Kerusakan Sarpras</strong></td>
-        <td><?= $model->has_property_damage ? 'Ya' : 'Tidak' ?></td>
+        <td colspan="2">
+            <strong>6. Saksi Kejadian (jika ada)</strong>
+            <div class="line-space"><?= nl2br(Html::encode($model->witness ?: '-')) ?></div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Detail Kerusakan</strong></td>
-        <td><?= nl2br(Html::encode($model->property_damage_detail ?: '-')) ?></td>
+        <td colspan="2">
+            <strong>7. Lampiran Foto Kejadian</strong>
+            <div class="hint">Foto lampiran tercetak otomatis dari sistem.</div>
+            <div>
+                <?php if (!empty($imagePaths)): ?>
+                    <?php foreach ($imagePaths as $imagePath): ?>
+                        <div class="img-box">
+                            <img src="<?= Html::encode($imagePath) ?>" alt="Lampiran">
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="line-space">Tidak ada lampiran foto.</div>
+                <?php endif; ?>
+            </div>
+            <?php if (!empty($nonImageFiles)): ?>
+                <div><strong>Lampiran non-gambar:</strong> <?= Html::encode(implode(', ', $nonImageFiles)) ?></div>
+            <?php endif; ?>
+        </td>
     </tr>
     <tr>
-        <td><strong>Saksi Kejadian</strong></td>
-        <td><?= nl2br(Html::encode($model->witness ?: '-')) ?></td>
+        <td colspan="2">
+            <strong>8. Catatan Lain-lain / Usulan Perbaikan</strong>
+            <div class="line-space"><?= nl2br(Html::encode($model->additional_notes ?: '-')) ?></div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Catatan Pelapor</strong></td>
-        <td><?= nl2br(Html::encode($model->additional_notes ?: '-')) ?></td>
+        <td class="label-cell">9. Nama Pelapor</td>
+        <td>
+            <?= Html::encode($model->reporter ? $model->reporter->username : ($model->reporter_name ?: '-')) ?>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <span class="checkbox-line"><?= $box((int) $model->is_anonymous === 1) ?> Lapor Anonim</span>
+        </td>
     </tr>
 </table>
 
-<h3 style="margin: 18px 0 8px; font-size: 14px;">Hasil Telaah Sekretaris</h3>
-<table width="100%" cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; font-size: 12px;">
+<div class="section-title">BAGIAN II &mdash; DIISI OLEH SEKRETARIS K3L (VERIFIKASI &amp; TINDAK LANJUT)</div>
+<table>
     <tr>
-        <td><strong>Jenis Kejadian</strong></td>
-        <td><?= Html::encode($model->incident_type ?: '-') ?></td>
+        <td colspan="2">
+            <strong>a. Jenis Kejadian</strong><br>
+            <span class="checkbox-line"><?= $box($isPelaporanBahaya) ?> 1) Pelaporan Bahaya</span>
+            <span class="checkbox-line"><?= $box($isSakitAkibatKerja) ?> 2) Pelaporan Sakit Akibat Kerja</span>
+            <span class="checkbox-line"><?= $box($isInsidenK3) ?> 3) Pelaporan Insiden K3</span>
+            <br>
+            <span class="checkbox-line">Pelaporan Bahaya: <?= $box($isKondisiTidakAman) ?> Kondisi Tidak Aman</span>
+            <span class="checkbox-line"><?= $box($isPerilakuTidakAman) ?> Perilaku Tidak Aman</span>
+            <br>
+            <span class="checkbox-line">Sakit Akibat Kerja: <?= $box($isPAK) ?> Penyakit Akibat Kerja (PAK)</span>
+            <span class="checkbox-line"><?= $box($isGawatMedis) ?> Kegawatdaruratan Medis</span>
+            <br>
+            <span class="checkbox-line">Insiden K3: <?= $box($isNearMiss) ?> Hampir Celaka (Nearmiss)</span>
+            <span class="checkbox-line"><?= $box($isKecelakaanKerja) ?> Kecelakaan Kerja</span>
+        </td>
     </tr>
     <tr>
-        <td><strong>Rekomendasi</strong></td>
-        <td><?= nl2br(Html::encode($model->recommendation ?: '-')) ?></td>
+        <td colspan="2">
+            <strong>b. Penyebab Kejadian</strong><br>
+            <span class="checkbox-line"><?= $box($isCauseDirect) ?> Penyebab Langsung</span>
+            <span class="checkbox-line"><?= $box($isCauseUnsafeCondition) ?> Kondisi Tidak Aman</span>
+            <span class="checkbox-line"><?= $box($isCauseUnsafeBehavior) ?> Perilaku Tidak Aman</span>
+            <br>
+            <span class="checkbox-line"><?= $box($isCauseIndirect) ?> Penyebab Tidak Langsung</span>
+            <span class="checkbox-line"><?= $box($isCausePersonal) ?> Personal / Pribadi</span>
+            <span class="checkbox-line"><?= $box($isCauseWork) ?> Pekerjaan</span>
+        </td>
     </tr>
     <tr>
-        <td><strong>PIC</strong></td>
-        <td><?= Html::encode($model->picUser ? $model->picUser->username : '-') ?></td>
+        <td colspan="2">
+            <strong>c. Rekomendasi Perbaikan</strong>
+            <div class="line-space-lg"><?= nl2br(Html::encode($model->recommendation ?: '-')) ?></div>
+        </td>
     </tr>
     <tr>
-        <td><strong>Data yang Kurang</strong></td>
-        <td><?= nl2br(Html::encode($model->missing_data_note ?: '-')) ?></td>
+        <td class="label-cell">d. Verifikasi Laporan</td>
+        <td>
+            <span class="checkbox-line"><?= $box($isValidVerification) ?> Valid</span>
+            <span class="checkbox-line"><?= $box(!$isValidVerification) ?> Tidak Valid</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="label-cell">e. PIC Tindak Lanjut</td>
+        <td><?= Html::encode($model->getPicDisplayLabel()) ?></td>
     </tr>
 </table>
 
-<h3 style="margin: 18px 0 8px; font-size: 14px;">Hasil Catatan Ketua Tim</h3>
-<table width="100%" cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; font-size: 12px;">
+<table class="signature" style="margin-top: 12px;">
     <tr>
-        <td width="35%"><strong>Keputusan</strong></td>
-        <td><?= Html::encode($teamLeadDecision) ?></td>
-    </tr>
-    <tr>
-        <td><strong>Catatan Ketua Tim</strong></td>
-        <td><?= nl2br(Html::encode($teamLeadNote)) ?></td>
-    </tr>
-    <tr>
-        <td><strong>Tindak Lanjut Koordinator</strong></td>
-        <td><?= nl2br(Html::encode($model->coordinator_follow_up_note ?: '-')) ?></td>
+        <td width="33%">Pelapor,<br><br><br><br>(________________________)</td>
+        <td width="34%">Diverifikasi oleh,<br><em>Sekretaris K3L</em><br><br><br>(________________________)</td>
+        <td width="33%">Mengetahui,<br><em>Ketua K3L / HSE Manager</em><br><br><br>(________________________)</td>
     </tr>
 </table>

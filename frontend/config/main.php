@@ -44,14 +44,12 @@ return [
             'botToken' => $params['telegram.botToken'],
             'apiBaseUrl' => $params['telegram.apiBaseUrl'],
         ],
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
             ],
         ],
-        */
     ],
     'params' => $params,
 ];

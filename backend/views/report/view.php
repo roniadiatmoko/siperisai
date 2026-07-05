@@ -8,7 +8,6 @@ use yii\helpers\Url;
 
 /** @var yii\web\View $this */
 /** @var common\models\Report $model */
-/** @var array $users */
 
 $this->title = 'Laporan ' . $model->report_number;
 $this->params['breadcrumbs'][] = ['label' => 'Daftar Laporan', 'url' => ['index']];
@@ -36,6 +35,13 @@ $statusLabels = [
 ];
 
 $victimConditionLabels = Report::victimConditionOptions();
+$selectedIncidentTypeId = $model->incident_type ? (string) $model->incident_type : '';
+$selectedCategoryId = ($model->incidentType && $model->incidentType->incidentCategory)
+    ? (string) $model->incidentType->incidentCategory->id
+    : '';
+$causeGroupOptions = Report::causeGroupOptions();
+$causeSubtypeOptionsByGroup = Report::causeSubtypeOptionsByGroup();
+$picUnitOptions = Report::picUnitOptions();
 $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Report::STATUS_SECRETARY_REVIEW], true);
 ?>
 
@@ -79,6 +85,10 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
                 <tr>
                     <th>Lokasi</th>
                     <td><?= Html::encode($model->location ? $model->location->name : '-') ?></td>
+                </tr>
+                <tr>
+                    <th>Detail Lokasi</th>
+                    <td><?= nl2br(Html::encode($model->detail_lokasi ?: '-')) ?></td>
                 </tr>
                 <tr>
                     <th>Pelapor</th>
@@ -137,12 +147,20 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
                     <td><?= Html::encode($model->incident_type ? $model->incidentType->incidentCategory->name . ' - ' . $model->incidentType->name : '-') ?></td>
                 </tr>
                 <tr>
+                    <th>Penyebab Kejadian</th>
+                    <td><?= Html::encode($model->getCauseGroupLabel()) ?></td>
+                </tr>
+                <tr>
+                    <th>Jenis Penyebab Kejadian</th>
+                    <td><?= Html::encode($model->getCauseSubtypeLabel()) ?></td>
+                </tr>
+                <tr>
                     <th>Rekomendasi</th>
                     <td><?= nl2br(Html::encode($model->recommendation ?: '-')) ?></td>
                 </tr>
                 <tr>
                     <th>PIC</th>
-                    <td><?= Html::encode($model->picUser ? $model->picUser->username : '-') ?></td>
+                    <td><?= Html::encode($model->getPicDisplayLabel()) ?></td>
                 </tr>
                 <tr>
                     <th>Data yang Kurang</th>
@@ -188,17 +206,85 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
                                 <option value="">Pilih jenis kejadian</option>
                             </select>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Penyebab Kejadian</label>
+                            <select id="cause_group"
+                                name="cause_group"
+                                class="form-select"
+                                required>
+                                <option value="">Pilih penyebab kejadian</option>
+                                <?php foreach ($causeGroupOptions as $groupValue => $groupLabel): ?>
+                                    <option value="<?= Html::encode($groupValue) ?>" <?= $model->cause_group === $groupValue ? 'selected' : '' ?>>
+                                        <?= Html::encode($groupLabel) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Jenis Penyebab Kejadian</label>
+                            <select id="cause_subtype"
+                                name="cause_subtype"
+                                class="form-select"
+                                required>
+                                <option value="">Pilih jenis penyebab kejadian</option>
+                            </select>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label" for="recommendation">Rekomendasi perbaikan</label>
                             <textarea id="recommendation" class="form-control" name="recommendation" rows="4" required><?= Html::encode($model->recommendation) ?></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="pic_user_id">PIC tindak lanjut</label>
-                            <?= Html::dropDownList('pic_user_id', $model->pic_user_id, $users, ['id' => 'pic_user_id', 'class' => 'form-select', 'prompt' => 'Pilih PIC', 'required' => true]) ?>
+                            <label class="form-label" for="pic_unit">PIC Unit Kerja</label>
+                            <?= Html::dropDownList('pic_unit', $model->pic_unit, $picUnitOptions, ['id' => 'pic_unit', 'class' => 'form-select', 'prompt' => 'Pilih unit kerja PIC', 'required' => true]) ?>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="pic_name">Nama PIC</label>
+                            <input type="text" id="pic_name" class="form-control" name="pic_name" value="<?= Html::encode($model->pic_name) ?>" placeholder="Tulis nama PIC" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="missing_data_note">Data yang kurang (opsional)</label>
                             <textarea id="missing_data_note" class="form-control" name="missing_data_note" rows="3"><?= Html::encode($model->missing_data_note) ?></textarea>
+                        </div>
+                        <hr>
+                        <h5 class="mb-3">Perbaikan Inputan Pelapor</h5>
+                        <div class="mb-3">
+                            <label class="form-label" for="has_victim">Ada korban</label>
+                            <?= Html::dropDownList('has_victim', (string) ((int) $model->has_victim), ['1' => 'Ya', '0' => 'Tidak'], ['id' => 'has_victim', 'class' => 'form-select', 'required' => true]) ?>
+                        </div>
+                        <div id="victim-fields">
+                            <div class="mb-3">
+                                <label class="form-label" for="victim_name">Nama korban</label>
+                                <input type="text" id="victim_name" class="form-control" name="victim_name" value="<?= Html::encode($model->victim_name) ?>" placeholder="Tulis nama korban">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="victim_condition">Kondisi korban</label>
+                                <?= Html::dropDownList('victim_condition', (string) ($model->victim_condition ?: ''), Report::victimConditionOptions(), ['id' => 'victim_condition', 'class' => 'form-select', 'prompt' => 'Pilih kondisi korban']) ?>
+                            </div>
+                            <div class="mb-3" id="victim-condition-detail-field">
+                                <label class="form-label" for="victim_condition_detail">Detail kondisi korban</label>
+                                <textarea id="victim_condition_detail" class="form-control" name="victim_condition_detail" rows="3"><?= Html::encode($model->victim_condition_detail) ?></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="has_property_damage">Ada kerusakan sarpras</label>
+                            <?= Html::dropDownList('has_property_damage', (string) ((int) $model->has_property_damage), ['1' => 'Ya', '0' => 'Tidak'], ['id' => 'has_property_damage', 'class' => 'form-select', 'required' => true]) ?>
+                        </div>
+                        <div class="mb-3" id="property-damage-field">
+                            <label class="form-label" for="property_damage_detail">Detail kerusakan</label>
+                            <textarea id="property_damage_detail" class="form-control" name="property_damage_detail" rows="3"><?= Html::encode($model->property_damage_detail) ?></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="witness">Saksi kejadian</label>
+                            <textarea id="witness" class="form-control" name="witness" rows="3"><?= Html::encode($model->witness) ?></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="additional_notes">Catatan pelapor</label>
+                            <textarea id="additional_notes" class="form-control" name="additional_notes" rows="3"><?= Html::encode($model->additional_notes) ?></textarea>
                         </div>
                         <?= Html::submitButton('Preview', ['class' => 'btn btn-primary']) ?>
                         <?= Html::endForm() ?>
@@ -269,12 +355,42 @@ $isSecretaryEditable = in_array($model->status, [Report::STATUS_SUBMITTED, Repor
 <?php
 
 $url = Url::to(['report/incident-type-list']);
+$selectedCategoryIdJs = \yii\helpers\Json::htmlEncode($selectedCategoryId);
+$selectedIncidentTypeIdJs = \yii\helpers\Json::htmlEncode($selectedIncidentTypeId);
+$causeSubtypeByGroupJs = \yii\helpers\Json::htmlEncode($causeSubtypeOptionsByGroup);
+$selectedCauseGroupJs = \yii\helpers\Json::htmlEncode((string) ($model->cause_group ?: ''));
+$selectedCauseSubtypeJs = \yii\helpers\Json::htmlEncode((string) ($model->cause_subtype ?: ''));
 
 $this->registerJs(<<<JS
 
 const incidentUrl = '{$url}';
+const selectedCategoryId = {$selectedCategoryIdJs};
+const selectedIncidentTypeId = {$selectedIncidentTypeIdJs};
+const causeSubtypeByGroup = {$causeSubtypeByGroupJs};
+const selectedCauseGroup = {$selectedCauseGroupJs};
+const selectedCauseSubtype = {$selectedCauseSubtypeJs};
 
 $(function () {
+
+    let isInitialIncidentLoad = true;
+
+    function refillCauseSubtype() {
+        const causeGroup = $('#cause_group').val();
+        const subtypeOptions = causeSubtypeByGroup[causeGroup] || {};
+        const target = $('#cause_subtype');
+
+        target.empty().append(new Option('Pilih jenis penyebab kejadian', ''));
+
+        $.each(subtypeOptions, function (value, label) {
+            target.append(new Option(label, value));
+        });
+
+        if (causeGroup === selectedCauseGroup && selectedCauseSubtype) {
+            target.val(selectedCauseSubtype);
+        }
+
+        target.trigger('change');
+    }
 
     $('#incident_category_id').select2({
         width: '100%',
@@ -284,6 +400,83 @@ $(function () {
     $('#incident_type_id').select2({
         width: '100%',
         placeholder: 'Pilih jenis kejadian'
+    });
+
+    $('#cause_group').select2({
+        width: '100%',
+        placeholder: 'Pilih penyebab kejadian'
+    });
+
+    $('#cause_subtype').select2({
+        width: '100%',
+        placeholder: 'Pilih jenis penyebab kejadian'
+    });
+
+    $('#pic_unit').select2({
+        width: '100%',
+        placeholder: 'Pilih unit kerja PIC'
+    });
+
+    $('#has_victim').select2({
+        width: '100%'
+    });
+
+    $('#victim_condition').select2({
+        width: '100%',
+        placeholder: 'Pilih kondisi korban'
+    });
+
+    $('#has_property_damage').select2({
+        width: '100%'
+    });
+
+    function toggleVictimConditionDetail() {
+        const hasVictim = $('#has_victim').val() === '1';
+        const isInjured = $('#victim_condition').val() === 'injured_or_sick';
+        const showDetail = hasVictim && isInjured;
+
+        $('#victim-condition-detail-field').toggle(showDetail);
+        if (!showDetail) {
+            $('#victim_condition_detail').val('');
+        }
+    }
+
+    function toggleVictimFields() {
+        const hasVictim = $('#has_victim').val() === '1';
+        $('#victim-fields').toggle(hasVictim);
+
+        if (!hasVictim) {
+            $('#victim_name').val('');
+            $('#victim_condition').val('').trigger('change.select2');
+            $('#victim_condition_detail').val('');
+        }
+
+        toggleVictimConditionDetail();
+    }
+
+    function togglePropertyDamageField() {
+        const hasPropertyDamage = $('#has_property_damage').val() === '1';
+        $('#property-damage-field').toggle(hasPropertyDamage);
+
+        if (!hasPropertyDamage) {
+            $('#property_damage_detail').val('');
+        }
+    }
+
+    $('#cause_group').on('change', function () {
+        refillCauseSubtype();
+    });
+
+    $('#has_victim').on('change', function () {
+        toggleVictimFields();
+    });
+
+    $('#victim_condition').on('change', function () {
+        toggleVictimConditionDetail();
+    });
+
+    $('#has_property_damage').on('change', function () {
+        togglePropertyDamageField();
     });
 
     $('#incident_category_id').on('change', function () {
@@ -316,6 +509,12 @@ $(function () {
 
                 });
 
+                if (isInitialIncidentLoad && selectedIncidentTypeId) {
+                    $('#incident_type_id').val(selectedIncidentTypeId);
+                }
+
+                isInitialIncidentLoad = false;
+
                 $('#incident_type_id').trigger('change');
             },
             error: function (xhr) {
@@ -325,6 +524,19 @@ $(function () {
         });
 
     });
+
+    if (selectedCategoryId) {
+        $('#incident_category_id').val(selectedCategoryId).trigger('change');
+    }
+
+    if (selectedCauseGroup) {
+        $('#cause_group').val(selectedCauseGroup).trigger('change');
+    } else {
+        refillCauseSubtype();
+    }
+
+    toggleVictimFields();
+    togglePropertyDamageField();
 
 });
 

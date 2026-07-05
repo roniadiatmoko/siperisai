@@ -13,6 +13,7 @@ use yii\web\UploadedFile;
 class ReportSubmitForm extends Model
 {
     public $location_id;
+    public $detail_lokasi;
     public $incident_time_input;
     public $description;
     public $has_victim = 0;
@@ -48,7 +49,7 @@ class ReportSubmitForm extends Model
             [['location_id', 'incident_time_input', 'description'], 'required'],
             [['location_id'], 'integer'],
             [['location_id'], 'exist', 'targetClass' => Location::class, 'targetAttribute' => ['location_id' => 'id']],
-            [['description', 'victim_condition_detail', 'property_damage_detail', 'witness', 'additional_notes'], 'string'],
+            [['description', 'detail_lokasi', 'victim_condition_detail', 'property_damage_detail', 'witness', 'additional_notes'], 'string'],
             [['has_victim', 'has_property_damage', 'is_anonymous'], 'boolean'],
             [['has_victim', 'has_property_damage', 'is_anonymous'], 'default', 'value' => 0],
             [['victim_name', 'reporter_name'], 'string', 'max' => 255],
@@ -65,15 +66,38 @@ class ReportSubmitForm extends Model
             [['reporter_name'], 'required', 'when' => function (self $model) {
                 return !(bool) $model->is_anonymous;
             }, 'whenClient' => "function () { return !$('#reportsubmitform-is_anonymous').is(':checked'); }"],
+            [['detail_lokasi'], 'required', 'when' => function (self $model) {
+                return $model->isDetailLokasiRequired();
+            }, 'whenClient' => "function () { return !!window.requiresDetailLokasiForSelectedLocation && window.requiresDetailLokasiForSelectedLocation(); }"],
             [['incident_time_input'], 'string', 'max' => 32],
             [['attachmentFiles'], 'file', 'skipOnEmpty' => true, 'maxFiles' => 5, 'extensions' => ['jpg', 'jpeg', 'png', 'webp']],
         ];
+    }
+
+    private function isDetailLokasiRequired()
+    {
+        $locationId = (int) $this->location_id;
+        if ($locationId <= 0) {
+            return false;
+        }
+
+        $location = Location::findOne($locationId);
+        if ($location === null) {
+            return false;
+        }
+
+        if ((int) $location->jenis_lokasi === Location::JENIS_LOKASI_EKSTERNAL) {
+            return true;
+        }
+
+        return (string) $location->code === Location::CODE_INTERNAL_LAINNYA;
     }
 
     public function attributeLabels()
     {
         return [
             'location_id' => 'Lokasi',
+            'detail_lokasi' => 'Detail Lokasi',
             'incident_time_input' => 'Waktu Kejadian',
             'description' => 'Deskripsi Kejadian',
             'has_victim' => 'Apakah ada korban?',
@@ -98,6 +122,7 @@ class ReportSubmitForm extends Model
 
         $report = new Report();
         $report->location_id = $this->location_id;
+        $report->detail_lokasi = $this->detail_lokasi;
         $report->reporter_id = $reporterId;
         $report->status = Report::STATUS_SUBMITTED;
         $report->incident_time = strtotime($this->incident_time_input);

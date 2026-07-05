@@ -74,7 +74,6 @@ class ReportController extends Controller
     public function actionView($id)
     {
         $model = $this->findModel($id);
-        $users = $this->getUserOptions();
         $categories = RefIncidentCategory::find()
             ->where(['status' => 1])
             ->orderBy('name')
@@ -83,7 +82,6 @@ class ReportController extends Controller
 
         return $this->render('view', [
             'model' => $model,
-            'users' => $users,
             'categories' => $categories,
         ]);
     }
@@ -101,15 +99,87 @@ class ReportController extends Controller
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
-        $users = $this->getUserOptions();
-
         if (Yii::$app->request->isPost) {
-            $model->incident_type = Yii::$app->request->post('incident_type');
-            $model->recommendation = Yii::$app->request->post('recommendation');
-            $model->pic_user_id = (int) Yii::$app->request->post('pic_user_id');
-            $model->missing_data_note = Yii::$app->request->post('missing_data_note');
+            $incidentTypeId = Yii::$app->request->post('incident_type_id', Yii::$app->request->post('incident_type'));
+            $causeGroup = Yii::$app->request->post('cause_group');
+            $causeSubtype = Yii::$app->request->post('cause_subtype');
+            $picUnit = Yii::$app->request->post('pic_unit');
+            $picName = trim((string) Yii::$app->request->post('pic_name', ''));
+            $hasVictim = (int) Yii::$app->request->post('has_victim', 0);
+            $victimName = trim((string) Yii::$app->request->post('victim_name', ''));
+            $victimCondition = (string) Yii::$app->request->post('victim_condition', '');
+            $victimConditionDetail = trim((string) Yii::$app->request->post('victim_condition_detail', ''));
+            $hasPropertyDamage = (int) Yii::$app->request->post('has_property_damage', 0);
+            $propertyDamageDetail = trim((string) Yii::$app->request->post('property_damage_detail', ''));
+            $witness = trim((string) Yii::$app->request->post('witness', ''));
+            $additionalNotes = trim((string) Yii::$app->request->post('additional_notes', ''));
 
-            if ($model->save(false, ['incident_type', 'recommendation', 'pic_user_id', 'missing_data_note'])) {
+            if (empty($incidentTypeId) || empty($causeGroup) || empty($causeSubtype) || empty($picUnit) || $picName === '') {
+                Yii::$app->session->setFlash('warning', 'Jenis kejadian, penyebab kejadian, unit kerja PIC, dan nama PIC wajib diisi.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            $subtypeByGroup = Report::causeSubtypeOptionsByGroup();
+            $isCauseValid = isset($subtypeByGroup[$causeGroup]) && isset($subtypeByGroup[$causeGroup][$causeSubtype]);
+            if (!$isCauseValid) {
+                Yii::$app->session->setFlash('warning', 'Pilihan penyebab kejadian tidak valid.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            $picUnitOptions = Report::picUnitOptions();
+            if (!isset($picUnitOptions[$picUnit])) {
+                Yii::$app->session->setFlash('warning', 'Pilihan unit kerja PIC tidak valid.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            if (!in_array($hasVictim, [0, 1], true)) {
+                Yii::$app->session->setFlash('warning', 'Pilihan ada korban tidak valid.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            if (!in_array($hasPropertyDamage, [0, 1], true)) {
+                Yii::$app->session->setFlash('warning', 'Pilihan ada kerusakan sarpras tidak valid.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            $victimConditionOptions = Report::victimConditionOptions();
+            if ($hasVictim === 1 && $victimCondition !== '' && !isset($victimConditionOptions[$victimCondition])) {
+                Yii::$app->session->setFlash('warning', 'Pilihan kondisi korban tidak valid.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+
+            if ($hasVictim !== 1) {
+                $victimName = '';
+                $victimCondition = '';
+                $victimConditionDetail = '';
+            }
+
+            if ($victimCondition !== Report::VICTIM_CONDITION_INJURED) {
+                $victimConditionDetail = '';
+            }
+
+            if ($hasPropertyDamage !== 1) {
+                $propertyDamageDetail = '';
+            }
+
+            $model->incident_type = (string) $incidentTypeId;
+            $model->cause_group = (string) $causeGroup;
+            $model->cause_subtype = (string) $causeSubtype;
+            $model->recommendation = Yii::$app->request->post('recommendation');
+            $model->pic_unit = (string) $picUnit;
+            $model->pic_name = $picName;
+            $model->pic_user_id = null;
+            $model->missing_data_note = Yii::$app->request->post('missing_data_note');
+            $model->has_victim = $hasVictim;
+            $model->victim_name = $victimName;
+            $model->victim_condition = $victimCondition;
+            $model->victim_condition_detail = $victimConditionDetail;
+            $model->has_property_damage = $hasPropertyDamage;
+            $model->property_damage_detail = $propertyDamageDetail;
+            $model->witness = $witness;
+            $model->additional_notes = $additionalNotes;
+
+            if ($model->save(false, ['incident_type', 'cause_group', 'cause_subtype', 'recommendation', 'pic_unit', 'pic_name', 'pic_user_id', 'missing_data_note', 'has_victim', 'victim_name', 'victim_condition', 'victim_condition_detail', 'has_property_damage', 'property_damage_detail', 'witness', 'additional_notes'])) {
                 if (in_array($model->status, [Report::STATUS_SUBMITTED, Report::STATUS_NOT_APPROVED], true)) {
                     $note = $model->status === Report::STATUS_NOT_APPROVED
                         ? 'Laporan direview ulang sekretaris setelah tidak disetujui ketua tim'
@@ -124,7 +194,6 @@ class ReportController extends Controller
 
         return $this->render('secretary', [
             'model' => $model,
-            'users' => $users,
         ]);
     }
 
@@ -287,7 +356,14 @@ class ReportController extends Controller
 
         $filePath = $pdfDirectory . DIRECTORY_SEPARATOR . $model->report_number . '.pdf';
         $html = $this->renderPartial('_pdf', ['model' => $model]);
-        Yii::$app->pdfService->renderHtmlToFile($html, $filePath);
+        Yii::$app->pdfService->renderHtmlToFile($html, $filePath, [
+            'format' => 'Legal',
+            'orientation' => 'P',
+            'margin_top' => 10,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_bottom' => 10,
+        ]);
 
         return $filePath;
     }

@@ -1,5 +1,6 @@
 <?php
 
+use common\models\Report;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
@@ -10,6 +11,8 @@ use yii\widgets\ActiveForm;
 $this->title = 'Pelengkapan Laporan oleh Sekretaris';
 $this->params['breadcrumbs'][] = ['label' => 'Daftar Laporan', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+
+$picUnitOptions = Report::picUnitOptions();
 ?>
 
 <div class="report-secretary">
@@ -33,8 +36,13 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
 
             <div class="mb-3">
-                <label class="form-label">PIC Tindak Lanjut</label>
-                <?= Html::dropDownList('pic_user_id', $model->pic_user_id, $users, ['class' => 'form-select', 'prompt' => 'Pilih PIC', 'required' => true]) ?>
+                <label class="form-label">PIC Unit Kerja</label>
+                <?= Html::dropDownList('pic_unit', $model->pic_unit, $picUnitOptions, ['class' => 'form-select', 'prompt' => 'Pilih unit kerja PIC', 'required' => true]) ?>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Nama PIC</label>
+                <input type="text" class="form-control" name="pic_name" value="<?= Html::encode($model->pic_name) ?>" placeholder="Tulis nama PIC" required>
             </div>
 
             <div class="d-flex gap-2">

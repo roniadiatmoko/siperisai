@@ -113,6 +113,14 @@ if (!Yii::$app->user->isGuest) {
                                 </p>
                             </a>
                         </li>
+                        <?php if (Yii::$app->user->can('viewReportAnalytics')): ?>
+                            <li class="nav-item">
+                                <a href="<?= Url::to(['/report-analytics/index']) ?>" class="nav-link<?= Yii::$app->controller->id === 'report-analytics' ? ' active' : '' ?>">
+                                    <i class="nav-icon bi bi-bar-chart-line-fill"></i>
+                                    <p>Laporan Grafik</p>
+                                </a>
+                            </li>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </ul>
             </nav>

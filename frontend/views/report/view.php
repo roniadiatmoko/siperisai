@@ -77,6 +77,10 @@ $reporterDisplay = ((int) $report->is_anonymous === 1)
                     <td><?= Html::encode($report->location ? $report->location->name : '-') ?></td>
                 </tr>
                 <tr>
+                    <th>Detail Lokasi</th>
+                    <td><?= nl2br(Html::encode($report->detail_lokasi ?: '-')) ?></td>
+                </tr>
+                <tr>
                     <th>Waktu Kejadian</th>
                     <td><?= date('d-m-Y H:i', (int) $report->incident_time) ?></td>
                 </tr>

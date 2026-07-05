@@ -52,14 +52,12 @@ return [
         'pdfService' => [
             'class' => \common\components\PdfService::class,
         ],
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
             ],
         ],
-        */
     ],
     'params' => $params,
 ];

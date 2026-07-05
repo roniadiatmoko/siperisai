@@ -7,6 +7,7 @@ use yii\widgets\ActiveForm;
 /** @var frontend\models\ReportSubmitForm $model */
 /** @var common\models\Location|null $selectedLocation */
 /** @var array $locationItems */
+/** @var array $locationDetailRules */
 /** @var bool $isGuest */
 
 $this->title = 'Buat Laporan';
@@ -33,8 +34,8 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
             </div>
             <div class="report-wizard-step">
                 <span class="report-wizard-step__number">3</span>
-                <span class="report-wizard-step__title">Kirim Laporan</span>
-                <span class="report-wizard-step__text">Submit laporan ke sistem K3L</span>
+                <span class="report-wizard-step__title">Preview &amp; Finalisasi</span>
+                <span class="report-wizard-step__text">Periksa data sebelum laporan disimpan</span>
             </div>
         </div>
     </section>
@@ -45,9 +46,15 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
         <p class="text-muted">Silakan pilih lokasi kerja</p>
     <?php endif; ?>
 
-    <?php $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]); ?>
+    <?php $form = ActiveForm::begin([
+        'action' => ['preview'],
+        'options' => ['enctype' => 'multipart/form-data'],
+    ]); ?>
 
     <?= $form->field($model, 'location_id')->dropDownList($locationItems, ['prompt' => 'Pilih lokasi kerja']) ?>
+    <div id="detail-lokasi-field" style="display:none;">
+        <?= $form->field($model, 'detail_lokasi')->textarea(['rows' => 2, 'placeholder' => 'Isi detail lokasi']) ?>
+    </div>
     <?= $form->field($model, 'incident_time_input')->input('datetime-local') ?>
     <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
 
@@ -83,19 +90,28 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
     <?= $form->field($model, 'attachmentFiles')->fileInput(['multiple' => true, 'accept' => 'image/*', 'capture' => 'environment']) ?>
 
     <div class="form-group mt-3">
-        <?= Html::submitButton('Kirim Laporan', ['class' => 'btn btn-primary']) ?>
+        <?= Html::submitButton('Lihat Preview', ['class' => 'btn btn-primary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>
 </div>
 
 <?php
+$locationDetailRulesJs = \yii\helpers\Json::htmlEncode($locationDetailRules ?? []);
 $js = <<<'JS'
 (function () {
+    var locationDetailRules = LOCATION_DETAIL_RULES;
+    window.requiresDetailLokasiForSelectedLocation = function () {
+        return false;
+    };
+
     var $locationSelect = $('#reportsubmitform-location_id');
     if ($locationSelect.length === 0 || typeof $locationSelect.select2 !== 'function') {
         return;
     }
+
+    var $detailLokasiField = $('#detail-lokasi-field');
+    var $detailLokasiInput = $('#reportsubmitform-detail_lokasi');
 
     $locationSelect.select2({
         width: '100%',
@@ -107,6 +123,34 @@ $js = <<<'JS'
             }
         }
     });
+
+    function getSelectedLocationRule() {
+        var selectedId = String($locationSelect.val() || '');
+        if (!selectedId || !locationDetailRules[selectedId]) {
+            return null;
+        }
+
+        return locationDetailRules[selectedId];
+    }
+
+    function toggleDetailLokasiField() {
+        var rule = getSelectedLocationRule();
+        var show = !!(rule && rule.requires_detail);
+
+        $detailLokasiField.toggle(show);
+
+        if (!show) {
+            $detailLokasiInput.val('');
+            return;
+        }
+
+        $detailLokasiInput.attr('placeholder', rule.placeholder || 'Isi detail lokasi');
+    }
+
+    window.requiresDetailLokasiForSelectedLocation = function () {
+        var rule = getSelectedLocationRule();
+        return !!(rule && rule.requires_detail);
+    };
 
     var $hasVictimRadios = $('input[name="ReportSubmitForm[has_victim]"]');
     var $victimFields = $('#victim-fields');
@@ -177,12 +221,14 @@ $js = <<<'JS'
     if ($anonymous.length > 0) {
         $anonymous.on('change', toggleReporterField);
     }
+    $locationSelect.on('change', toggleDetailLokasiField);
 
+    toggleDetailLokasiField();
     toggleVictimFields();
     toggleDamageField();
     toggleReporterField();
 })();
 JS;
 
-$this->registerJs($js);
+$this->registerJs(str_replace('LOCATION_DETAIL_RULES', $locationDetailRulesJs, $js));
 ?>
