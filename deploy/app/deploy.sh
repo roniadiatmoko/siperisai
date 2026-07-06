@@ -48,7 +48,8 @@ if [[ "$SKIP_COMPOSER" != "true" ]]; then
         --no-dev \
         --optimize-autoloader \
         --no-interaction \
-        --prefer-dist
+        --prefer-dist \
+        --ignore-platform-reqs
 fi
 
 # --- Database migrate ---
@@ -68,7 +69,8 @@ find "$SITE_ROOT/deploy" -name "*.sh" -exec chmod +x {} +
 for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime; do
     mkdir -p "$dir"
     chown -R "${SITE_USER}:www-data" "$dir"
-    chmod -R 777 "$dir"
+    find "$dir" -type d -exec chmod 777 {} +
+    find "$dir" -type f ! -name ".gitignore" -exec chmod 777 {} + 2>/dev/null || true
 done
 
 # --- Reload PHP-FPM to clear OPCache ---

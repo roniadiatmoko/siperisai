@@ -245,7 +245,7 @@ fi
 # Composer install + Yii init + permissions
 if ask_step "Composer install & Yii init" "$VENDOR_STATUS" "$VENDOR_DETAIL"; then
     cd "$APP_DIR" || exit 1
-    sudo -u "$APP_USER" composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+    sudo -u "$APP_USER" composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-reqs
     sudo -u "$APP_USER" "php${PHP_ACTIVE}" init --env=Production --overwrite=all
     
     # Set permissions
@@ -258,7 +258,8 @@ if ask_step "Composer install & Yii init" "$VENDOR_STATUS" "$VENDOR_DETAIL"; the
     for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime; do
         mkdir -p "$dir"
         chown -R "${APP_USER}:www-data" "$dir"
-        chmod -R 777 "$dir"
+        find "$dir" -type d -exec chmod 777 {} +
+        find "$dir" -type f ! -name ".gitignore" -exec chmod 777 {} + 2>/dev/null || true
     done
     
     chmod o+x "$APP_USER_HOME"
