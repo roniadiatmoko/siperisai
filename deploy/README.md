@@ -16,12 +16,26 @@ sudo bash deploy/setup-server.sh
 
 ---
 
-## 2. Deploy Update Aplikasi (Daily Update)
-Gunakan perintah ini setiap kali ada pembaruan kode di git untuk deploy tanpa downtime (*zero-downtime*):
+## 2. Cara Update / Pull Code & Deploy (Zero-Downtime)
+Gunakan perintah ini setiap kali ada pembaruan kode di Git untuk melakukan pull code dan deploy otomatis secara langsung tanpa downtime:
 ```bash
 sudo bash deploy/app/deploy.sh deploy/sites/siperisai.my.id.conf
 ```
-*Proses otomatis: git pull, composer install, database migration, perbaikan chmod folder, reload PHP-FPM 8.3.*
+*Script di atas akan secara otomatis menjalankan:*
+1. **`git pull`** secara otomatis pada branch aktif yang sedang digunakan.
+2. **`composer install`** dengan optimasi autoloader dan melewati pengecekan versi platform (`--ignore-platform-reqs`).
+3. **`php yii migrate`** tanpa interaksi untuk menerapkan perubahan database terbaru.
+4. **Sinkronisasi hak akses folder** (assets, uploads, runtime, dan pembuatan symlink backend `public`).
+5. **Reload PHP-FPM** secara otomatis untuk mengosongkan cache memori OPCache.
+
+> [!TIP]
+> **Parameter Tambahan (Opsional):**
+> - Lewati git pull (jika Anda sudah melakukan pull manual): `--skip-pull`
+> - Lewati composer install: `--skip-composer`
+> - Lewati migrasi database: `--skip-migrate`
+>
+> *Contoh (hanya migrasi & reload saja):*
+> `sudo bash deploy/app/deploy.sh deploy/sites/siperisai.my.id.conf --skip-pull --skip-composer`
 
 ---
 
