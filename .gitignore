@@ -48,3 +48,8 @@ phpunit.phar
 # ignore active backup configuration
 /deploy/backup/backup.conf
 
+# ignore uploaded files, reports, and generated QR codes
+/frontend/web/public/uploads/qr/*
+/frontend/web/public/uploads/reports/*
+/frontend/web/uploads/*
+
