@@ -66,7 +66,7 @@ find "$SITE_ROOT" -type f -exec chmod 644 {} +
 chmod +x "$SITE_ROOT/yii" 2>/dev/null || true
 find "$SITE_ROOT/deploy" -name "*.sh" -exec chmod +x {} +
 
-for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime; do
+for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime frontend/web/public/uploads; do
     mkdir -p "$dir"
     chown -R "${SITE_USER}:www-data" "$dir"
     find "$dir" -type d -exec chmod 777 {} +

@@ -255,7 +255,7 @@ if ask_step "Composer install & Yii init" "$VENDOR_STATUS" "$VENDOR_DETAIL"; the
     chmod +x "$APP_DIR/yii" 2>/dev/null || true
     find "$APP_DIR/deploy" -name "*.sh" -exec chmod +x {} +
     
-    for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime; do
+    for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime frontend/web/public/uploads; do
         mkdir -p "$dir"
         chown -R "${APP_USER}:www-data" "$dir"
         find "$dir" -type d -exec chmod 777 {} +
