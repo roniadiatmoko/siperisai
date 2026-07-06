@@ -13,7 +13,11 @@ return [
     'app.qrPath' => '@frontend/web/public/uploads/qr',
     'app.qrUrl' => '/public/uploads/qr',
     'telegram.apiBaseUrl' => 'https://api.telegram.org',
+<<<<<<< HEAD
     'telegram.botToken' => '8922303531:AAGXnrNj2MRS-fp6TzStOTrfgm87kzJGE9M',
+=======
+    'telegram.botToken' => '',
+>>>>>>> d614aadb71ff6bf3175f5aeeb406984748f13b3f
     'report.defaultStatus' => 'submitted',
     'report.queueStatus' => 'submitted',
     'report.secretaryStatus' => 'secretary_review',
