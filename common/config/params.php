@@ -13,6 +13,7 @@ return [
     'app.qrPath' => '@frontend/web/public/uploads/qr',
     'app.qrUrl' => '/public/uploads/qr',
     'telegram.apiBaseUrl' => 'https://api.telegram.org',
+    'telegram.botToken' => '',
     'report.defaultStatus' => 'submitted',
     'report.queueStatus' => 'submitted',
     'report.secretaryStatus' => 'secretary_review',

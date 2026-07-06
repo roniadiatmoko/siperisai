@@ -44,3 +44,7 @@ phpunit.phar
 /backend/web/index.php
 /backend/web/index-test.php
 /backend/web/robots.txt
+
+# ignore active backup configuration
+/deploy/backup/backup.conf
+
