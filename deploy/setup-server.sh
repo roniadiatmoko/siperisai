@@ -272,6 +272,11 @@ if [[ -f "$APP_DIR/vendor/autoload.php" ]]; then
     log_step "Yii: running database migrations..."
     sudo -u "$APP_USER" "php${PHP_ACTIVE}" yii migrate --interactive=0
     log_ok "Database migrations selesai"
+
+    # Reload PHP-FPM to clear OPCache cache
+    log_step "Reloading PHP-FPM..."
+    systemctl reload "php${PHP_ACTIVE}-fpm" 2>/dev/null || service "php${PHP_ACTIVE}-fpm" reload 2>/dev/null || true
+    log_ok "PHP-FPM reloaded"
 fi
 
 # Backup cron — sync password dulu
