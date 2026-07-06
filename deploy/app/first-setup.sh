@@ -89,7 +89,10 @@ sudo -u "$SITE_USER" composer install \
 # --- Permissions setup ---
 log_step "Setup directory permissions..."
 chown -R "${SITE_USER}:www-data" "$SITE_ROOT"
-chmod -R 755 "$SITE_ROOT"
+find "$SITE_ROOT" -type d -exec chmod 755 {} +
+find "$SITE_ROOT" -type f -exec chmod 644 {} +
+chmod +x "$SITE_ROOT/yii" 2>/dev/null || true
+find "$SITE_ROOT/deploy" -name "*.sh" -exec chmod +x {} +
 
 # Buat runtime & assets folder and set permissions
 for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime; do

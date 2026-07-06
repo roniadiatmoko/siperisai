@@ -250,7 +250,10 @@ if ask_step "Composer install & Yii init" "$VENDOR_STATUS" "$VENDOR_DETAIL"; the
     
     # Set permissions
     chown -R "${APP_USER}:www-data" "$APP_DIR"
-    chmod -R 755 "$APP_DIR"
+    find "$APP_DIR" -type d -exec chmod 755 {} +
+    find "$APP_DIR" -type f -exec chmod 644 {} +
+    chmod +x "$APP_DIR/yii" 2>/dev/null || true
+    find "$APP_DIR/deploy" -name "*.sh" -exec chmod +x {} +
     
     for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/assets console/runtime; do
         mkdir -p "$dir"
