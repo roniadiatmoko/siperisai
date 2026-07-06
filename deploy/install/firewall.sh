@@ -14,11 +14,10 @@ log_banner "UFW Firewall Setup"
 
 apt-get install -y -qq ufw
 
-# Reset ke default
-ufw --force reset
-
-ufw default deny incoming
-ufw default allow outgoing
+# Konfigurasi firewall policies (tanpa reset)
+log_info "Configuring default policies without resetting existing rules..."
+ufw default deny incoming 2>/dev/null || true
+ufw default allow outgoing 2>/dev/null || true
 
 # Wajib
 ufw allow 22/tcp    comment "SSH"

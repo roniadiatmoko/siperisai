@@ -90,6 +90,20 @@ PHP_VERSIONS="${INPUT_PHP:-8.3}"
 # Deteksi PHP aktif dari versi yang dipilih/ada
 PHP_ACTIVE="${PHP_VERSIONS%% *}"  # ambil versi pertama
 
+# Re-evaluasi PHP status berdasarkan versi yang dipilih
+PHP_STATUS="found"
+for v in $PHP_VERSIONS; do
+    if ! command -v "php${v}" &>/dev/null; then
+        PHP_STATUS="missing"
+        break
+    fi
+done
+if [[ "$PHP_STATUS" == "missing" ]]; then
+    PHP_DETAIL="versi $PHP_VERSIONS belum lengkap terinstall"
+else
+    PHP_DETAIL="versi $PHP_VERSIONS sudah terinstall"
+fi
+
 # ============================================================
 # INSTALL SOFTWARE
 # ============================================================

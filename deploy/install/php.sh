@@ -23,9 +23,14 @@ PHP_EXTENSIONS=(
     imap
 )
 
+CURRENT_DEFAULT_PHP=$(readlink -f /usr/bin/php 2>/dev/null)
+
 log_banner "PHP Multi-Version Installer"
 log_info "Versi yang akan diinstall: ${VERSIONS[*]}"
 log_info "OS: $(lsb_release -ds)"
+if [[ -n "$CURRENT_DEFAULT_PHP" ]]; then
+    log_info "Default system PHP CLI version: $CURRENT_DEFAULT_PHP"
+fi
 
 # Cek apakah versi tersedia di repo default (Ubuntu 26.04+ punya PHP 8.5)
 SYSTEM_PHP_VER=$(apt-cache show php-cli 2>/dev/null | grep "^Version:" | head -1 | grep -oP '\d+\.\d+' | head -1)
@@ -122,6 +127,16 @@ for VER in "${VERSIONS[@]}"; do
     PHP_BIN="php${VER}"
     log_ok "PHP ${VER} installed: $("$PHP_BIN" --version | head -1)"
 done
+
+# Restore default system PHP CLI version if it changed
+if [[ -n "$CURRENT_DEFAULT_PHP" && -f "$CURRENT_DEFAULT_PHP" ]]; then
+    ACTUAL_PHP=$(readlink -f /usr/bin/php 2>/dev/null)
+    if [[ "$CURRENT_DEFAULT_PHP" != "$ACTUAL_PHP" ]]; then
+        log_step "Restoring default system PHP CLI to $CURRENT_DEFAULT_PHP..."
+        update-alternatives --set php "$CURRENT_DEFAULT_PHP" >/dev/null 2>&1 || true
+        log_info "System PHP CLI restored to: $(php -v | head -1)"
+    fi
+fi
 
 log_step "Installed PHP versions:"
 for VER in "${VERSIONS[@]}"; do

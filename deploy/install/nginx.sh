@@ -12,7 +12,12 @@ log_banner "Nginx Installer"
 apt-get install -y nginx
 
 # Hardened nginx.conf
-cat > /etc/nginx/nginx.conf <<'NGINXCONF'
+if [[ -f /etc/nginx/nginx.conf ]]; then
+    log_info "Nginx configuration (/etc/nginx/nginx.conf) already exists. Keeping it to prevent breaking other sites."
+    cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup-siperisai
+else
+    log_step "Writing hardened nginx.conf..."
+    cat > /etc/nginx/nginx.conf <<'NGINXCONF'
 user www-data;
 worker_processes auto;
 pid /run/nginx.pid;
@@ -70,11 +75,24 @@ http {
     include /etc/nginx/sites-enabled/*;
 }
 NGINXCONF
+fi
 
 # Disable default site
-rm -f /etc/nginx/sites-enabled/default
+if [[ -L /etc/nginx/sites-enabled/default || -f /etc/nginx/sites-enabled/default ]]; then
+    rm -f /etc/nginx/sites-enabled/default
+    log_info "Disabled default Nginx site."
+fi
 
 systemctl enable nginx
-systemctl restart nginx
+
+if systemctl is-active --quiet nginx 2>/dev/null; then
+    log_step "Reloading Nginx (zero-downtime)..."
+    systemctl reload nginx
+    log_ok "Nginx reloaded."
+else
+    log_step "Starting Nginx..."
+    systemctl start nginx
+    log_ok "Nginx started."
+fi
 
 nginx -t && log_ok "Nginx installed & configured. Version: $(nginx -v 2>&1)"

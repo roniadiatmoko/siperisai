@@ -9,10 +9,9 @@ require_root
 
 log_banner "System Base Setup"
 
-log_step "Update & upgrade system..."
+log_step "Update package list..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get upgrade -y -qq
 
 log_step "Install base packages..."
 apt-get install -y -qq \
