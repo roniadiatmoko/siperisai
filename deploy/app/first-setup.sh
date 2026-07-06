@@ -103,6 +103,13 @@ for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/asse
     find "$dir" -type f ! -name ".gitignore" -exec chmod 777 {} + 2>/dev/null || true
 done
 
+# --- Create frontend public symlink in backend ---
+if [[ ! -L "$SITE_ROOT/backend/web/public" ]] && [[ ! -d "$SITE_ROOT/backend/web/public" ]]; then
+    ln -s ../../frontend/web/public "$SITE_ROOT/backend/web/public"
+    chown -h "${SITE_USER}:www-data" "$SITE_ROOT/backend/web/public"
+    log_ok "Symlink dibuat: backend/web/public -> ../../frontend/web/public"
+fi
+
 # Pastikan www-data bisa traverse home directory user
 SITE_USER_HOME=$(getent passwd "$SITE_USER" | cut -d: -f6)
 if [[ -d "$SITE_USER_HOME" ]]; then

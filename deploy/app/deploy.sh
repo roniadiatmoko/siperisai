@@ -73,6 +73,13 @@ for dir in backend/runtime backend/web/assets frontend/runtime frontend/web/asse
     find "$dir" -type f ! -name ".gitignore" -exec chmod 777 {} + 2>/dev/null || true
 done
 
+# --- Create frontend public symlink in backend ---
+if [[ ! -L "$SITE_ROOT/backend/web/public" ]] && [[ ! -d "$SITE_ROOT/backend/web/public" ]]; then
+    ln -s ../../frontend/web/public "$SITE_ROOT/backend/web/public"
+    chown -h "${SITE_USER}:www-data" "$SITE_ROOT/backend/web/public"
+    log_ok "Symlink dibuat: backend/web/public -> ../../frontend/web/public"
+fi
+
 # --- Reload PHP-FPM to clear OPCache ---
 log_step "Reloading PHP-FPM..."
 systemctl reload "php${SITE_PHP_VERSION}-fpm" 2>/dev/null || service "php${SITE_PHP_VERSION}-fpm" reload 2>/dev/null || true

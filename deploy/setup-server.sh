@@ -261,6 +261,13 @@ if ask_step "Composer install & Yii init" "$VENDOR_STATUS" "$VENDOR_DETAIL"; the
         find "$dir" -type d -exec chmod 777 {} +
         find "$dir" -type f ! -name ".gitignore" -exec chmod 777 {} + 2>/dev/null || true
     done
+
+    # --- Create frontend public symlink in backend ---
+    if [[ ! -L "$APP_DIR/backend/web/public" ]] && [[ ! -d "$APP_DIR/backend/web/public" ]]; then
+        ln -s ../../frontend/web/public "$APP_DIR/backend/web/public"
+        chown -h "${APP_USER}:www-data" "$APP_DIR/backend/web/public"
+        log_ok "Symlink dibuat: backend/web/public -> ../../frontend/web/public"
+    fi
     
     chmod o+x "$APP_USER_HOME"
     log_ok "Composer & Yii init selesai"
