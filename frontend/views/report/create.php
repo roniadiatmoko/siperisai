@@ -86,8 +86,23 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
         'checked' => false,
     ]) ?>
 
+    <div class="form-group">
+        <label class="control-label">Foto Kejadian</label>
+        <?= Html::radioList('attachment_source', 'camera', [
+            'camera' => 'Ambil foto dari kamera',
+            'file' => 'Unggah file',
+        ], [
+            'itemOptions' => ['class' => 'form-check-inline'],
+        ]) ?>
+        <div class="help-block">Pilih kamera untuk mengambil foto langsung, atau unggah file gambar dari perangkat Anda.</div>
+        <div id="attachment-source-message" class="help-block text-info"></div>
+    </div>
 
-    <?= $form->field($model, 'attachmentFiles')->fileInput(['multiple' => true, 'accept' => 'image/*', 'capture' => 'environment']) ?>
+    <?= $form->field($model, 'attachmentFiles')->fileInput([
+        'multiple' => true,
+        'accept' => 'image/*',
+        'capture' => 'environment',
+    ]) ?>
 
     <div class="form-group mt-3">
         <?= Html::submitButton('Lihat Preview', ['class' => 'btn btn-primary']) ?>
@@ -106,23 +121,44 @@ $js = <<<'JS'
     };
 
     var $locationSelect = $('#reportsubmitform-location_id');
-    if ($locationSelect.length === 0 || typeof $locationSelect.select2 !== 'function') {
-        return;
-    }
-
     var $detailLokasiField = $('#detail-lokasi-field');
     var $detailLokasiInput = $('#reportsubmitform-detail_lokasi');
+    var $attachmentSource = $('input[name="attachment_source"]');
+    var $attachmentInput = $('#reportsubmitform-attachmentfiles');
+    var $attachmentMessage = $('#attachment-source-message');
 
-    $locationSelect.select2({
-        width: '100%',
-        placeholder: 'Pilih lokasi kerja',
-        allowClear: true,
-        language: {
-            noResults: function () {
-                return 'Lokasi tidak ditemukan';
-            }
+    function toggleAttachmentInput() {
+        if ($attachmentInput.length === 0 || $attachmentSource.length === 0) {
+            return;
         }
-    });
+
+        var useCamera = $attachmentSource.filter(':checked').val() === 'camera';
+        if (useCamera) {
+            $attachmentInput.attr('capture', 'environment');
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                $attachmentMessage.text('Browser Anda belum mendukung pemotretan langsung. Silakan pilih unggah file.');
+            } else {
+                $attachmentMessage.text('Browser akan meminta izin akses kamera saat Anda memilih file dari kamera.');
+            }
+        } else {
+            $attachmentInput.removeAttr('capture');
+            $attachmentMessage.text('Anda dapat mengunggah file gambar dari perangkat Anda.');
+        }
+        $attachmentInput.attr('accept', 'image/*');
+    }
+
+    if ($locationSelect.length > 0 && typeof $locationSelect.select2 === 'function') {
+        $locationSelect.select2({
+            width: '100%',
+            placeholder: 'Pilih lokasi kerja',
+            allowClear: true,
+            language: {
+                noResults: function () {
+                    return 'Lokasi tidak ditemukan';
+                }
+            }
+        });
+    }
 
     function getSelectedLocationRule() {
         var selectedId = String($locationSelect.val() || '');
@@ -221,8 +257,12 @@ $js = <<<'JS'
     if ($anonymous.length > 0) {
         $anonymous.on('change', toggleReporterField);
     }
-    $locationSelect.on('change', toggleDetailLokasiField);
+    $attachmentSource.on('change', toggleAttachmentInput);
+    if ($locationSelect.length > 0) {
+        $locationSelect.on('change', toggleDetailLokasiField);
+    }
 
+    toggleAttachmentInput();
     toggleDetailLokasiField();
     toggleVictimFields();
     toggleDamageField();

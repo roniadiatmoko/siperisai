@@ -28,7 +28,7 @@ AppAsset::register($this);
 <header>
     <?php
     NavBar::begin([
-        'brandLabel' => 'Si-PERISAI K3',
+        'brandLabel' => 'SI-PERISAI K3',
         'brandUrl' => Yii::$app->homeUrl,
         'options' => [
             'class' => 'navbar navbar-expand-md navbar-dark fixed-top app-navbar',
@@ -81,7 +81,7 @@ AppAsset::register($this);
 
 <footer class="footer mt-auto py-3 text-muted">
     <div class="container">
-        <p class="float-start">&copy; Si-PERISAI K3 <?= date('Y') ?></p>
+        <p class="float-start">&copy; SI-PERISAI K3 <?= date('Y') ?></p>
     </div>
 </footer>
 

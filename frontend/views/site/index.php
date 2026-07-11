@@ -4,7 +4,7 @@
 
 use yii\helpers\Url;
 
-$this->title = 'Si-PERISAI K3';
+$this->title = 'SI-PERISAI K3';
 ?>
 <div class="site-index">
     <section class="home-banner mb-4" aria-label="Banner aplikasi">
@@ -20,15 +20,15 @@ $this->title = 'Si-PERISAI K3';
             <div class="carousel-inner">
                 <!-- Slide 1 (Active) -->
                 <div class="carousel-item active">
-                    <img src="<?= Url::to('@web/public/uploads/images/logo.jpeg') ?>" class="d-block w-100 home-banner-image" alt="Banner Si-PERISAI K3 - Slide 1" loading="eager">
+                    <img src="<?= Url::to('@web/public/uploads/images/logo.jpeg') ?>" class="d-block w-100 home-banner-image" alt="Banner SI-PERISAI K3 - Slide 1" loading="eager">
                 </div>
                 <!-- Slide 2 -->
                 <div class="carousel-item">
-                    <img src="<?= Url::to('@web/public/uploads/images/edukasi.jpeg') ?>" class="d-block w-100 home-banner-image" alt="Banner Si-PERISAI K3 - Slide 2" loading="lazy">
+                    <img src="<?= Url::to('@web/public/uploads/images/edukasi.jpeg') ?>" class="d-block w-100 home-banner-image" alt="Banner SI-PERISAI K3 - Slide 2" loading="lazy">
                 </div>
                 <!-- Slide 3 -->
                 <div class="carousel-item">
-                    <img src="<?= Url::to('@web/public/uploads/images/alur-pelaporan.jpeg') ?>" class="d-block w-100 home-banner-image" alt="Banner Si-PERISAI K3 - Slide 3" loading="lazy">
+                    <img src="<?= Url::to('@web/public/uploads/images/alur-pelaporan.jpeg') ?>" class="d-block w-100 home-banner-image" alt="Banner SI-PERISAI K3 - Slide 3" loading="lazy">
                 </div>
             </div>
 
@@ -46,14 +46,14 @@ $this->title = 'Si-PERISAI K3';
     <section class="home-hero mb-4">
         <div class="home-hero-grid">
             <div class="home-hero-copy">
-                <span class="home-eyebrow">Pelaporan Keselamatan Kerja</span>
-                <h1>Si-PERISAI K3</h1>
+                <span class="home-eyebrow">Pelaporan Insiden K3</span>
+                <h1>SI-PERISAI K3</h1>
                 <p class="lead mb-4">
                     Laporan anda membantu menciptakan lingkungan kerja yang lebih aman, sehat dan produktif
                 </p>
                 <div class="home-cta d-flex flex-wrap gap-2">
                     <a class="btn btn-primary" href="<?= Url::to(['/report/create']) ?>">Buat Laporan Sekarang</a>
-                    <a class="btn btn-outline-secondary" href="<?= Url::to(['/site/login']) ?>">Masuk ke Sistem</a>
+                    <!-- <a class="btn btn-outline-secondary" href="<?php // Url::to(['/site/login']) ?>">Masuk ke Sistem</a> -->
                 </div>
             </div>
             <div class="home-hero-panel">
@@ -61,7 +61,7 @@ $this->title = 'Si-PERISAI K3';
                 <ol class="home-flow mb-0">
                     <li>Pilih lokasi kejadian.</li>
                     <li>Isi detail kejadian, korban, kerusakan, dan dokumentasi foto.</li>
-                    <li>Tim terkait menerima notifikasi dan memproses tindak lanjut.</li>
+                    <li>Laporan akan dikirim ke tim K3L untuk ditindaklanjuti.</li>
                 </ol>
             </div>
         </div>
@@ -69,21 +69,21 @@ $this->title = 'Si-PERISAI K3';
 
     <section class="home-feature row g-3 mb-4">
         <div class="col-md-4">
-            <article class="home-card h-100">
-                <h2 class="h5">Pelaporan Cepat</h2>
-                <p class="mb-0">Form terstruktur dengan field dinamis membantu pelapor mengisi data penting secara lengkap tanpa membingungkan.</p>
+            <article class="home-card-green h-100">
+                <h2 class="h5">Kemudahan Pelaporan</h2>
+                <p class="mb-0">Form pelaporan digital yang mudah diakses melalui QR Code untuk memudahkan pekerja melaporkan bahaya dan insiden K3.</p>
             </article>
         </div>
         <div class="col-md-4">
             <article class="home-card h-100">
-                <h2 class="h5">Notifikasi Otomatis</h2>
-                <p class="mb-0">Setiap laporan baru langsung dikirim ke tim terkait melalui Telegram agar respons lebih cepat.</p>
+                <h2 class="h5">Kecepatan Akses Informasi</h2>
+                <p class="mb-0">Laporan yang masuk dapat diterima dan diverifikasi lebih cepat sehingga upaya tindak lanjut dapat segera dilakukan.</p>
             </article>
         </div>
         <div class="col-md-4">
-            <article class="home-card h-100">
-                <h2 class="h5">Jejak Tindak Lanjut</h2>
-                <p class="mb-0">Riwayat status laporan terdokumentasi sehingga proses evaluasi dan perbaikan dapat ditelusuri dengan jelas.</p>
+            <article class="home-card-green h-100">
+                <h2 class="h5">Peningkatan Partisipasi K3</h2>
+                <p class="mb-0">Memberikan ruang bagi seluruh karyawan untuk berperan aktif dalam mengenali dan melaporkan potensi bahaya sebagai upaya pencegahan.</p>
             </article>
         </div>
     </section>
@@ -91,10 +91,10 @@ $this->title = 'Si-PERISAI K3';
     <section class="home-highlight">
         <div class="home-highlight-inner">
             <div>
-                <h2 class="h4 mb-2">Bangun Budaya Kerja Aman</h2>
-                <p class="mb-0">Setiap laporan adalah langkah perbaikan. Laporkan segera, tindak lanjuti cepat, dan wujudkan lingkungan kerja yang lebih selamat.</p>
+                <h2 class="h4 mb-2">Efektivitas Pengelolaan Data Insiden K3</h2>
+                <p class="mb-0">Data laporan tersimpan secara digital, terdokumentasi, dan mudah diakses untuk mendukung evaluasi serta perbaikan berkelanjutan.</p>
             </div>
-            <a class="btn btn-primary" href="<?= Url::to(['/report/create']) ?>">Mulai Pelaporan</a>
+            <!-- <a class="btn btn-primary" href="<?php Url::to(['/report/create']) ?>">Mulai Pelaporan</a> -->
         </div>
     </section>
 </div>
