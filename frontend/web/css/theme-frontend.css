@@ -3,6 +3,7 @@
   --k3-green-700: #1b5e20;
   --k3-green-600: #2d7f58;
   --k3-green-500: #39966a;
+  --k3-green-200: #A5D6A7;
   --k3-green-100: #e9f5ef;
   --k3-green-050: #f3faf6;
   --k3-text-900: #1c2a23;
@@ -51,7 +52,7 @@ main .h2 {
 }
 
 .app-navbar {
-  background: linear-gradient(120deg, var(--k3-green-700), var(--k3-green-500));
+  background: linear-gradient(160deg, #1b5e20 0%, #1b5e20 100%);
   box-shadow: 0 6px 18px rgba(19, 77, 51, 0.26);
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
@@ -418,7 +419,7 @@ main .h2 {
 }
 
 .home-hero-panel {
-  background: linear-gradient(160deg, #1b5e20 0%, #1b5e20 100%);
+  background: linear-gradient(160deg, var(--k3-green-500) 0%, var(--k3-green-500) 100%);
   color: #f6fff9;
   border-radius: 18px;
   padding: 1rem 1.1rem;
@@ -465,8 +466,8 @@ main .h2 {
 }
 
 .home-card-green {
-  background: var(--k3-green-700) !important;
-  color: #ffffff !important;
+  background: var(--k3-green-200) !important;
+  color: #000 !important;
   border: 1px solid var(--k3-border);
   border-radius: 16px;
   padding: 1rem;
