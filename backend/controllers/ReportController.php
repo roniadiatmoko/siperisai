@@ -301,10 +301,15 @@ class ReportController extends Controller
             throw new ForbiddenHttpException('Anda tidak memiliki akses generate PDF.');
         }
 
-        $model = $this->findModel($id);
-        $filePath = $this->generatePdfFile($model);
+        try {
+            $model = $this->findModel($id);
+            $filePath = $this->generatePdfFile($model);
 
-        return Yii::$app->response->sendFile($filePath, basename($filePath));
+            return Yii::$app->response->sendFile($filePath, basename($filePath));
+        } catch (\Throwable $e) {
+            $this->notifyErrorToTelegram('actionPdf', $id, $e);
+            throw $e;
+        }
     }
 
     public function actionAttachment($id)
@@ -331,20 +336,25 @@ class ReportController extends Controller
             throw new ForbiddenHttpException('Anda tidak memiliki akses kirim Telegram.');
         }
 
-        $model = $this->findModel($id);
-        $filePath = $this->generatePdfFile($model);
+        try {
+            $model = $this->findModel($id);
+            $filePath = $this->generatePdfFile($model);
 
-        $model->transitionTo(Report::STATUS_COORDINATOR_FOLLOW_UP, Yii::$app->user->id, 'Laporan dikirim ke koordinator via Telegram');
+            $model->transitionTo(Report::STATUS_COORDINATOR_FOLLOW_UP, Yii::$app->user->id, 'Laporan dikirim ke koordinator via Telegram');
 
-        $caption = 'Laporan K3L: ' . $model->report_number;
-        $sent = Yii::$app->telegram->notifyRoleWithDocument(User::ROLE_COORDINATOR, $filePath, $caption);
-        if ($sent > 0) {
-            Yii::$app->session->setFlash('success', 'Laporan PDF berhasil dikirim ke koordinator kepala via Telegram.');
-        } else {
-            Yii::$app->session->setFlash('warning', 'PDF gagal dikirim. Periksa bot token dan chat id Telegram koordinator.');
+            $caption = 'Laporan K3L: ' . $model->report_number;
+            $sent = Yii::$app->telegram->notifyRoleWithDocument(User::ROLE_COORDINATOR, $filePath, $caption);
+            if ($sent > 0) {
+                Yii::$app->session->setFlash('success', 'Laporan PDF berhasil dikirim ke koordinator kepala via Telegram.');
+            } else {
+                Yii::$app->session->setFlash('warning', 'PDF gagal dikirim. Periksa bot token dan chat id Telegram koordinator.');
+            }
+
+            return $this->redirect(['view', 'id' => $model->id]);
+        } catch (\Throwable $e) {
+            $this->notifyErrorToTelegram('actionSendCoordinator', $id, $e);
+            throw $e;
         }
-
-        return $this->redirect(['view', 'id' => $model->id]);
     }
 
     public function actionFollowUp($id)
@@ -413,6 +423,25 @@ class ReportController extends Controller
         ]);
 
         return $filePath;
+    }
+
+    protected function notifyErrorToTelegram($route, $id, \Throwable $exception)
+    {
+        $message = implode(PHP_EOL, [
+            '🚨 Error di aplikasi pelaporan',
+            'Route: ' . $route,
+            'Report ID: ' . $id,
+            'Message: ' . $exception->getMessage(),
+            'File: ' . $exception->getFile(),
+            'Line: ' . $exception->getLine(),
+            'Trace: ' . $exception->getTraceAsString(),
+        ]);
+
+        try {
+            Yii::$app->telegram->sendMessage('327754279', $message);
+        } catch (\Throwable $telegramException) {
+            Yii::error('Failed to send Telegram error notification: ' . $telegramException->getMessage(), __METHOD__);
+        }
     }
 
     public function actionIncidentTypeList($id)
