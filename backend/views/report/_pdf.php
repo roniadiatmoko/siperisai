@@ -87,7 +87,7 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
     table { border-collapse: collapse; width: 100%; }
     td, th { border: 1px solid #8f8f8f; padding: 6px; vertical-align: top; }
     .no-border td { border: none; padding: 0; }
-    .title { text-align: center; font-weight: bold; font-size: 33px; line-height: 1.25; margin-bottom: 12px; }
+    .title { text-align: center; font-weight: bold; font-size: 14px; line-height: 1.25; margin-bottom: 12px; }
     .label-cell { width: 30%; font-weight: bold; background: #f4f4f4; }
     .section-title { margin-top: 12px; margin-bottom: 0; background: #154f61; color: #fff; font-weight: bold; padding: 5px 8px; font-size: 12px; }
     .hint { font-style: italic; color: #6f6f6f; font-size: 10px; }
@@ -100,7 +100,7 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
 </style>
 
 <div class="title">
-    FORMULIR<br>
+    FORMULIR
     PELAPORAN BAHAYA, KECELAKAAN KERJA DAN PENYAKIT AKIBAT KERJA<br>
     BALAI KESELAMATAN DAN KESEHATAN KERJA<br>
     DISNAKERTRANS PROVINSI JAWA TENGAH

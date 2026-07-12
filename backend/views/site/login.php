@@ -10,9 +10,10 @@ use yii\bootstrap5\Html;
 $this->title = 'Login Backend';
 ?>
 <div class="login-box" style="width: 420px;">
-    <div class="card card-outline card-primary">
+    <div class="card card-outline card-success">
         <div class="card-header text-center">
-            <a href="#" class="h3"><b>Backend</b> K3L</a>
+            <h3 class="text-success"><b>SI-PERISAI K3 </b></h3>
+            <p class="login-box-msg">Halaman login admin</p>
         </div>
         <div class="card-body">
             <p class="login-box-msg">Masuk untuk melanjutkan</p>
