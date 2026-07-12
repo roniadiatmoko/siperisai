@@ -25,6 +25,10 @@ AppAsset::register($this);
 
 <?= $content ?>
 
+<footer class="text-center text-muted py-3">
+    <small>&copy; <?= date('Y') ?> SI-PERISAI K3.</small>
+</footer>
+
 <?php $this->endBody() ?>
 </body>
 </html>
