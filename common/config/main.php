@@ -1,8 +1,6 @@
 <?php
 
 return [
-    'yiiDebug' => true,
-    'yiiEnv' => 'dev',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',

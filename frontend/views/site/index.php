@@ -57,7 +57,7 @@ $this->title = 'SI-PERISAI K3';
                 </div>
             </div>
             <div class="home-hero-panel">
-                <h2 class="h5 mb-3">Alur Pelaporan</h2>
+                <h2 class="h5 mb-3"><b>Alur Pelaporan</b></h2>
                 <ol class="home-flow mb-0">
                     <li>Pilih lokasi kejadian.</li>
                     <li>Isi detail kejadian, korban, kerusakan, dan dokumentasi foto.</li>

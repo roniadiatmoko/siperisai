@@ -419,14 +419,14 @@ main .h2 {
 }
 
 .home-hero-panel {
-  background: linear-gradient(160deg, var(--k3-green-500) 0%, var(--k3-green-500) 100%);
-  color: #f6fff9;
+  background: linear-gradient(160deg, var(--k3-green-200) 0%, var(--k3-green-200) 100%);
+  color: #000;
   border-radius: 18px;
   padding: 1rem 1.1rem;
 }
 
 .home-hero-panel h2 {
-  color: #ffffff;
+  color: #000;
 }
 
 .home-flow {
@@ -466,7 +466,7 @@ main .h2 {
 }
 
 .home-card-green {
-  background: var(--k3-green-200) !important;
+  background: var(--k3-green-100) !important;
   color: #000 !important;
   border: 1px solid var(--k3-border);
   border-radius: 16px;
