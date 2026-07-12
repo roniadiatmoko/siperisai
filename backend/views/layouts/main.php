@@ -72,7 +72,7 @@ if (!Yii::$app->user->isGuest) {
     <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
         <div class="sidebar-brand">
             <a href="<?= Url::to(['/site/index']) ?>" class="brand-link">
-                <span class="brand-text fw-light">Si-PERISAI K3</span>
+                <span class="brand-text fw-light">SI-PERISAI K3</span>
             </a>
         </div>
 
@@ -156,8 +156,8 @@ if (!Yii::$app->user->isGuest) {
     </main>
 
     <footer class="app-footer">
-        <strong>&copy; <?= date('Y') ?> Si-PERISAI K3.</strong>
-        <div class="float-end d-none d-sm-inline-block">AdminLTE Backend</div>
+        <strong>&copy; <?= date('Y') ?> SI-PERISAI K3.</strong>
+        <div class="float-end d-none d-sm-inline-block"></div>
     </footer>
 </div>
 
