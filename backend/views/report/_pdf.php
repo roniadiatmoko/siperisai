@@ -134,9 +134,7 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
     <tr>
         <td class="label-cell">4. Apakah Ada Korban?</td>
         <td>
-            <span class="checkbox-line"><?= $box((int) $model->has_victim === 1) ?> Ya</span>
-            <span class="checkbox-line"><?= $box((int) $model->has_victim !== 1) ?> Tidak</span>
-            <div class="hint">Catatan sistem: jika "Tidak" dipilih, kolom data korban dapat dikosongkan.</div>
+            <?= Html::encode((int) $model->has_victim === 1 ? 'Ya' : 'Tidak') ?>
         </td>
     </tr>
     <tr>
@@ -146,19 +144,25 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
     <tr>
         <td class="label-cell">Kondisi Korban</td>
         <td>
-            <span class="checkbox-line"><?= $box($isVictimConscious) ?> Sadar</span>
-            <span class="checkbox-line"><?= $box($isVictimUnconscious) ?> Tidak Sadar</span>
-            <span class="checkbox-line"><?= $box($isVictimNotInjured) ?> Tidak Cidera</span>
-            <span class="checkbox-line"><?= $box($isVictimInjured) ?> Cidera / Luka / Sakit</span>
-            <div>Bagian tubuh yang terdampak: <?= Html::encode($model->victim_condition_detail ?: '-') ?></div>
+            <?php
+                $kondisiKorban = '';
+                if ($isVictimConscious) {
+                    $kondisiKorban = 'Sadar';
+                } elseif ($isVictimUnconscious) {
+                    $kondisiKorban = 'Tidak Sadar';
+                } elseif ($isVictimNotInjured) {
+                    $kondisiKorban = 'Tidak Cidera';
+                } elseif ($isVictimInjured) {
+                    $kondisiKorban = 'Cidera / Luka / Sakit';
+                }
+            ?>
+            <?= Html::encode($kondisiKorban ?: '-') ?><?php if ($kondisiKorban && $model->victim_condition_detail): ?> - <?= Html::encode($model->victim_condition_detail) ?><?php endif; ?>
         </td>
     </tr>
     <tr>
         <td class="label-cell">5. Kerusakan Sarana/Prasarana?</td>
         <td>
-            <span class="checkbox-line"><?= $box((int) $model->has_property_damage === 1) ?> Ya</span>
-            <span class="checkbox-line"><?= $box((int) $model->has_property_damage !== 1) ?> Tidak</span>
-            <div>Sebutkan: <?= Html::encode($model->property_damage_detail ?: '-') ?></div>
+            <?= Html::encode((int) $model->has_property_damage === 1 ? 'Ya' : 'Tidak') ?><?php if ((int) $model->has_property_damage === 1 && $model->property_damage_detail): ?> - <?= Html::encode($model->property_damage_detail) ?><?php endif; ?>
         </td>
     </tr>
     <tr>
@@ -196,9 +200,7 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
     <tr>
         <td class="label-cell">9. Nama Pelapor</td>
         <td>
-            <?= Html::encode($model->reporter ? $model->reporter->username : ($model->reporter_name ?: '-')) ?>
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <span class="checkbox-line"><?= $box((int) $model->is_anonymous === 1) ?> Lapor Anonim</span>
+            <?= Html::encode((int) $model->is_anonymous === 1 ? 'Anonim' : ($model->reporter ? $model->reporter->username : ($model->reporter_name ?: '-'))) ?>
         </td>
     </tr>
 </table>
@@ -208,30 +210,56 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
     <tr>
         <td colspan="2">
             <strong>a. Jenis Kejadian</strong><br>
-            <span class="checkbox-line"><?= $box($isPelaporanBahaya) ?> 1) Pelaporan Bahaya</span>
-            <span class="checkbox-line"><?= $box($isSakitAkibatKerja) ?> 2) Pelaporan Sakit Akibat Kerja</span>
-            <span class="checkbox-line"><?= $box($isInsidenK3) ?> 3) Pelaporan Insiden K3</span>
-            <br>
-            <span class="checkbox-line">Pelaporan Bahaya: <?= $box($isKondisiTidakAman) ?> Kondisi Tidak Aman</span>
-            <span class="checkbox-line"><?= $box($isPerilakuTidakAman) ?> Perilaku Tidak Aman</span>
-            <br>
-            <span class="checkbox-line">Sakit Akibat Kerja: <?= $box($isPAK) ?> Penyakit Akibat Kerja (PAK)</span>
-            <span class="checkbox-line"><?= $box($isGawatMedis) ?> Kegawatdaruratan Medis</span>
-            <br>
-            <span class="checkbox-line">Insiden K3: <?= $box($isNearMiss) ?> Hampir Celaka (Nearmiss)</span>
-            <span class="checkbox-line"><?= $box($isKecelakaanKerja) ?> Kecelakaan Kerja</span>
+            <?php
+                $jenisKejadian = '';
+                if ($isPelaporanBahaya) {
+                    $jenisKejadian = 'Pelaporan Bahaya';
+                    if ($isKondisiTidakAman) {
+                        $jenisKejadian .= ' - Kondisi Tidak Aman';
+                    } elseif ($isPerilakuTidakAman) {
+                        $jenisKejadian .= ' - Perilaku Tidak Aman';
+                    }
+                } elseif ($isSakitAkibatKerja) {
+                    $jenisKejadian = 'Sakit Akibat Kerja';
+                    if ($isPAK) {
+                        $jenisKejadian .= ' - Penyakit Akibat Kerja (PAK)';
+                    } elseif ($isGawatMedis) {
+                        $jenisKejadian .= ' - Kegawatdaruratan Medis';
+                    }
+                } elseif ($isInsidenK3) {
+                    $jenisKejadian = 'Insiden K3';
+                    if ($isNearMiss) {
+                        $jenisKejadian .= ' - Hampir Celaka (Nearmiss)';
+                    } elseif ($isKecelakaanKerja) {
+                        $jenisKejadian .= ' - Kecelakaan Kerja';
+                    }
+                }
+            ?>
+            <?= Html::encode($jenisKejadian ?: '-') ?>
         </td>
     </tr>
     <tr>
         <td colspan="2">
             <strong>b. Penyebab Kejadian</strong><br>
-            <span class="checkbox-line"><?= $box($isCauseDirect) ?> Penyebab Langsung</span>
-            <span class="checkbox-line"><?= $box($isCauseUnsafeCondition) ?> Kondisi Tidak Aman</span>
-            <span class="checkbox-line"><?= $box($isCauseUnsafeBehavior) ?> Perilaku Tidak Aman</span>
-            <br>
-            <span class="checkbox-line"><?= $box($isCauseIndirect) ?> Penyebab Tidak Langsung</span>
-            <span class="checkbox-line"><?= $box($isCausePersonal) ?> Personal / Pribadi</span>
-            <span class="checkbox-line"><?= $box($isCauseWork) ?> Pekerjaan</span>
+            <?php
+                $penyebabKejadian = '';
+                if ($isCauseDirect) {
+                    $penyebabKejadian = 'Penyebab Langsung';
+                    if ($isCauseUnsafeCondition) {
+                        $penyebabKejadian .= ' - Kondisi Tidak Aman';
+                    } elseif ($isCauseUnsafeBehavior) {
+                        $penyebabKejadian .= ' - Perilaku Tidak Aman';
+                    }
+                } elseif ($isCauseIndirect) {
+                    $penyebabKejadian = 'Penyebab Tidak Langsung';
+                    if ($isCausePersonal) {
+                        $penyebabKejadian .= ' - Personal / Pribadi';
+                    } elseif ($isCauseWork) {
+                        $penyebabKejadian .= ' - Pekerjaan';
+                    }
+                }
+            ?>
+            <?= Html::encode($penyebabKejadian ?: '-') ?>
         </td>
     </tr>
     <tr>
@@ -255,8 +283,8 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
 
 <table class="signature" style="margin-top: 12px;">
     <tr>
-        <td width="33%">Pelapor,<br><br><br><br>(________________________)</td>
-        <td width="34%">Diverifikasi oleh,<br><em>Sekretaris K3L</em><br><br><br>(________________________)</td>
-        <td width="33%">Mengetahui,<br><em>Ketua K3L / HSE Manager</em><br><br><br>(________________________)</td>
+        <td width="33%">Pelapor,<br><br><br><br><?= Html::encode((int) $model->is_anonymous === 1 ? 'Anonim' : ($model->reporter ? $model->reporter->username : ($model->reporter_name ?: '-'))) ?></td>
+        <td width="34%">Diverifikasi oleh,<br><em>Sekretaris Tim K3L</em><br><br><br><?= $model->secretary_finalized_at ? date('d-m-Y H:i:s', $model->secretary_finalized_at) : '(________________________)' ?></td>
+        <td width="33%">Disetujui oleh,<br><em>Ketua Tim K3L</em><br><br><br><?= $model->team_lead_approved_at ? date('d-m-Y H:i:s', $model->team_lead_approved_at) : '(________________________)' ?></td>
     </tr>
 </table>
