@@ -43,7 +43,7 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
     <?php if ($selectedLocation !== null): ?>
         <p class="text-muted">Lokasi terdeteksi dari QR: <strong><?= Html::encode($selectedLocation->name) ?></strong>. Anda tetap bisa mengganti lokasi secara manual.</p>
     <?php else: ?>
-        <p class="text-muted">Silakan pilih lokasi kerja</p>
+        <p class="text-muted">Silakan pilih lokasi kejadian</p>
     <?php endif; ?>
 
     <?php $form = ActiveForm::begin([
@@ -51,7 +51,7 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
         'options' => ['enctype' => 'multipart/form-data'],
     ]); ?>
 
-    <?= $form->field($model, 'location_id')->dropDownList($locationItems, ['prompt' => 'Pilih lokasi kerja']) ?>
+    <?= $form->field($model, 'location_id')->dropDownList($locationItems, ['prompt' => 'Pilih lokasi kejadian']) ?>
     <div id="detail-lokasi-field" style="display:none;">
         <?= $form->field($model, 'detail_lokasi')->textarea(['rows' => 2, 'placeholder' => 'Isi detail lokasi']) ?>
     </div>
@@ -150,7 +150,7 @@ $js = <<<'JS'
     if ($locationSelect.length > 0 && typeof $locationSelect.select2 === 'function') {
         $locationSelect.select2({
             width: '100%',
-            placeholder: 'Pilih lokasi kerja',
+            placeholder: 'Pilih lokasi kejadian',
             allowClear: true,
             language: {
                 noResults: function () {
