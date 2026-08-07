@@ -162,7 +162,7 @@ class ReportController extends Controller
         return $this->render('preview', [
             'draft' => $draftData,
             'selectedLocation' => $selectedLocation,
-            'victimConditionOptions' => ReportSubmitForm::victimConditionOptions(),
+            'victimConditionOptions' => ReportSubmit`Form::victimConditionOptions(),
         ]);
     }
 
