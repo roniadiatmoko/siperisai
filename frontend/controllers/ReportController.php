@@ -115,11 +115,6 @@ class ReportController extends Controller
             return $this->redirect(['create']);
         }
 
-        if (Yii::$app->user->isGuest) {
-            $model->is_anonymous = 1;
-            $model->reporter_name = null;
-        }
-
         $model->attachmentFiles = UploadedFile::getInstances($model, 'attachmentFiles');
         if (!$model->validate()) {
             $selectedLocation = null;
