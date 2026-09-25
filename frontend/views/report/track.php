@@ -61,18 +61,18 @@ $currentStage = $statusToStage[$normalizedStatus] ?? 1;
                         <th width="240">Nomor Laporan</th>
                         <td><?= Html::encode($report->report_number) ?></td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <th>Lokasi</th>
-                        <td><?= Html::encode($report->location ? $report->location->name : '-') ?></td>
+                        <td><?php // Html::encode($report->location ? $report->location->name : '-') ?></td>
                     </tr>
                     <tr>
                         <th>Detail Lokasi</th>
-                        <td><?= nl2br(Html::encode($report->detail_lokasi ?: '-')) ?></td>
+                        <td><?php // nl2br(Html::encode($report->detail_lokasi ?: '-')) ?></td>
                     </tr>
                     <tr>
                         <th>Waktu Kejadian</th>
-                        <td><?= date('d-m-Y H:i', (int) $report->incident_time) ?></td>
-                    </tr>
+                        <td><?php // date('d-m-Y H:i', (int) $report->incident_time) ?></td>
+                    </tr> -->
                     <tr>
                         <th>Dibuat</th>
                         <td><?= date('d-m-Y H:i', (int) $report->created_at) ?></td>

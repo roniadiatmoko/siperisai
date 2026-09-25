@@ -44,7 +44,7 @@ class Report extends ActiveRecord
     public static function statusLabelOptions()
     {
         return [
-            self::STATUS_NOT_APPROVED => 'Tidak Disetujui Sekretaris',
+            self::STATUS_NOT_APPROVED => 'Selesai pada tahap verifikasi',
             self::STATUS_SUBMITTED => 'Dikirimkan ke Sekretaris',
             self::STATUS_TEAM_APPROVED => 'Dikirimkan ke Ketua Tim K3L',
             self::STATUS_SECRETARY_FINALIZED => 'Finalisasi Tindakan Sekretaris',

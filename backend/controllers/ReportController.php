@@ -218,7 +218,7 @@ class ReportController extends Controller
             $model->transitionTo(
                 Report::STATUS_NOT_APPROVED,
                 Yii::$app->user->id,
-                'Laporan dinyatakan tidak valid oleh sekretaris'
+                'Verifikasi laporan telah selesai'
             );
         }
 

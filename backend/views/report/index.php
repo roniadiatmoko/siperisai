@@ -15,7 +15,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 $queueLabels = [
     'secretary' => 'Antrian Sekretaris',
-    'rejected' => 'Antrian Ditolak',
+    'rejected' => 'Laporan tidak dilanjutkan',
     'tindakan' => 'Antrian Tindakan',
     'teamLead' => 'Antrian Ketua Tim',
     'coordinator' => 'Antrian Koordinator',
@@ -40,7 +40,7 @@ $queueButtonClass = static function (string $name, string $baseClass = 'btn-outl
             <div class="d-flex flex-wrap gap-2 mb-3">
                 <?php if (Yii::$app->user->can('reviewReport')): ?>
                     <?= Html::a('Antrian Sekretaris', ['index', 'queue' => 'secretary'], ['class' => 'btn ' . $queueButtonClass('secretary') . ' btn-sm']) ?>
-                    <?= Html::a('Antrian Ditolak', ['index', 'queue' => 'rejected'], ['class' => 'btn ' . $queueButtonClass('rejected', 'btn-outline-danger') . ' btn-sm']) ?>
+                    <?= Html::a('Laporan tidak dilanjutkan', ['index', 'queue' => 'rejected'], ['class' => 'btn ' . $queueButtonClass('rejected', 'btn-outline-danger') . ' btn-sm']) ?>
                     <?= Html::a('Antrian Tindakan', ['index', 'queue' => 'tindakan'], ['class' => 'btn ' . $queueButtonClass('tindakan') . ' btn-sm']) ?>
                 <?php endif; ?>
                 <?php if (Yii::$app->user->can('approveReport')): ?>
