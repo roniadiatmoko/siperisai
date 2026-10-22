@@ -212,6 +212,7 @@ class ReportController extends Controller
             'unconscious' => 'Tidak sadar',
             'injured_or_sick' => 'Cedera/luka/sakit',
             'not_injured' => 'Tidak cedera',
+            'fatality' => 'Fatality/kematian',
         ];
         $victimCondition = $victimConditionMap[$report->victim_condition] ?? '-';
         $hasVictim = (int) $report->has_victim === 1 ? 'Ya' : 'Tidak';

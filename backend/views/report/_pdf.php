@@ -154,6 +154,8 @@ $waktuKejadianJam = date('H:i', (int) $model->incident_time);
                     $kondisiKorban = 'Tidak Cidera';
                 } elseif ($isVictimInjured) {
                     $kondisiKorban = 'Cidera / Luka / Sakit';
+                } elseif ((string) $model->victim_condition === Report::VICTIM_CONDITION_FATALITY) {
+                    $kondisiKorban = 'Fatality/kematian';
                 }
             ?>
             <?= Html::encode($kondisiKorban ?: '-') ?><?php if ($kondisiKorban && $model->victim_condition_detail): ?> - <?= Html::encode($model->victim_condition_detail) ?><?php endif; ?>

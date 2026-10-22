@@ -51,27 +51,27 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
         'options' => ['enctype' => 'multipart/form-data'],
     ]); ?>
 
-    <?= $form->field($model, 'location_id')->dropDownList($locationItems, ['prompt' => 'Pilih lokasi kejadian']) ?>
+    <?= $form->field($model, 'location_id')->label($model->getAttributeLabel('location_id') . ' (Wajib diisi)')->dropDownList($locationItems, ['prompt' => 'Pilih lokasi kejadian']) ?>
     <div id="detail-lokasi-field" style="display:none;">
-        <?= $form->field($model, 'detail_lokasi')->textarea(['rows' => 2, 'placeholder' => 'Isi detail lokasi']) ?>
+        <?= $form->field($model, 'detail_lokasi')->label($model->getAttributeLabel('detail_lokasi') . ' (Wajib diisi)')->textarea(['rows' => 2, 'placeholder' => 'Isi detail lokasi']) ?>
     </div>
-    <?= $form->field($model, 'incident_time_input')->input('datetime-local') ?>
-    <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
+    <?= $form->field($model, 'incident_time_input')->label($model->getAttributeLabel('incident_time_input') . ' (Wajib diisi)')->input('datetime-local') ?>
+    <?= $form->field($model, 'description')->label($model->getAttributeLabel('description') . ' (Wajib diisi)')->textarea(['rows' => 6]) ?>
 
     <?= $form->field($model, 'has_victim')->radioList([1 => 'Ya', 0 => 'Tidak'], ['itemOptions' => ['class' => 'form-check-inline']]) ?>
 
     <div id="victim-fields">
-        <?= $form->field($model, 'victim_name')->textInput(['maxlength' => true]) ?>
-        <?= $form->field($model, 'victim_condition')->dropDownList($model::victimConditionOptions(), ['prompt' => 'Pilih kondisi korban']) ?>
+        <?= $form->field($model, 'victim_name')->label($model->getAttributeLabel('victim_name') . ' (Wajib diisi)')->textInput(['maxlength' => true]) ?>
+        <?= $form->field($model, 'victim_condition')->label($model->getAttributeLabel('victim_condition') . ' (Wajib diisi)')->dropDownList($model::victimConditionOptions(), ['prompt' => 'Pilih kondisi korban']) ?>
         <div id="victim-condition-detail-field">
-            <?= $form->field($model, 'victim_condition_detail')->textarea(['rows' => 2]) ?>
+            <?= $form->field($model, 'victim_condition_detail')->label($model->getAttributeLabel('victim_condition_detail') . ' (Wajib diisi)')->textarea(['rows' => 2]) ?>
         </div>
     </div>
 
     <?= $form->field($model, 'has_property_damage')->radioList([1 => 'Ya', 0 => 'Tidak'], ['itemOptions' => ['class' => 'form-check-inline']]) ?>
 
     <div id="property-damage-field">
-        <?= $form->field($model, 'property_damage_detail')->textarea(['rows' => 2]) ?>
+        <?= $form->field($model, 'property_damage_detail')->label($model->getAttributeLabel('property_damage_detail') . ' (Wajib diisi)')->textarea(['rows' => 2]) ?>
     </div>
 
     <?= $form->field($model, 'witness')->textarea(['rows' => 2]) ?>
@@ -79,7 +79,7 @@ $this->registerJsFile('/vendor/select2/js/select2.min.js', ['depends' => [\yii\w
 
 
     <div id="reporter-name-field">
-        <?= $form->field($model, 'reporter_name')->textInput(['maxlength' => true]) ?>
+        <?= $form->field($model, 'reporter_name')->label($model->getAttributeLabel('reporter_name') . ' (Wajib diisi)')->textInput(['maxlength' => true]) ?>
     </div>
 
     <?= $form->field($model, 'is_anonymous')->checkbox([

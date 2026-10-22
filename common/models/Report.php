@@ -22,6 +22,7 @@ class Report extends ActiveRecord
     public const VICTIM_CONDITION_UNCONSCIOUS = 'unconscious';
     public const VICTIM_CONDITION_INJURED = 'injured_or_sick';
     public const VICTIM_CONDITION_NOT_INJURED = 'not_injured';
+    public const VICTIM_CONDITION_FATALITY = 'fatality';
 
     public const CAUSE_GROUP_DIRECT = 'direct';
     public const CAUSE_GROUP_INDIRECT = 'indirect';
@@ -69,6 +70,7 @@ class Report extends ActiveRecord
             self::VICTIM_CONDITION_UNCONSCIOUS => 'Tidak sadar',
             self::VICTIM_CONDITION_INJURED => 'Cedera/luka/sakit',
             self::VICTIM_CONDITION_NOT_INJURED => 'Tidak cedera',
+            self::VICTIM_CONDITION_FATALITY => 'Fatality/kematian',
         ];
     }
 
